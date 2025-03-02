@@ -52,10 +52,16 @@ const ViewInvoice = () => {
 
   // Handle print functionality
   const handlePrint = useReactToPrint({
-    content: () => invoiceRef.current,
     documentTitle: `Invoice-${invoice?.invoiceNumber || 'unknown'}`,
     onAfterPrint: () => toast.success('Invoice printed successfully'),
   });
+
+  // Wrapper function to use with the button's onClick
+  const printInvoice = () => {
+    if (invoiceRef.current) {
+      handlePrint();
+    }
+  };
 
   // Handle download PDF functionality
   const handleDownloadPDF = async () => {
@@ -152,7 +158,7 @@ const ViewInvoice = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Button variant="outline" size="sm" onClick={printInvoice}>
                 <Printer className="h-4 w-4 mr-2" />
                 Print
               </Button>
