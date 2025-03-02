@@ -105,6 +105,14 @@ export function InvoiceForm() {
       notes: e.target.value,
     });
   };
+
+  // Update invoice number
+  const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoice({
+      ...invoice,
+      invoiceNumber: e.target.value,
+    });
+  };
   
   // Calculate totals whenever items change
   useEffect(() => {
@@ -245,9 +253,16 @@ export function InvoiceForm() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Invoice Details</CardTitle>
           <div className="flex items-center gap-4">
-            <div className="text-sm">
-              <span className="text-muted-foreground mr-2">Invoice #:</span>
-              <span className="font-medium">{invoice.invoiceNumber}</span>
+            <div className="text-sm flex items-end gap-2">
+              <div>
+                <Label htmlFor="invoice-number" className="text-xs text-muted-foreground">Invoice #</Label>
+                <Input
+                  id="invoice-number"
+                  value={invoice.invoiceNumber}
+                  onChange={handleInvoiceNumberChange}
+                  className="w-[120px] h-8 text-sm"
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="invoice-date" className="text-xs text-muted-foreground">Date</Label>

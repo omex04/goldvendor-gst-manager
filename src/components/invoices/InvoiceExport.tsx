@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -7,43 +6,33 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { CalendarIcon, Download } from 'lucide-react';
-import { downloadExcel, formatInvoicesForExport } from '@/utils/exportUtils';
+import { downloadExcel, formatInvoicesForExport, filterInvoices } from '@/utils/exportUtils';
+import { Input } from '@/components/ui/input';
+import type { Invoice, ExportFilters } from '@/types';
+import { toast } from 'sonner';
 
 interface InvoiceExportProps {
-  invoices: any[];
+  invoices: Invoice[];
 }
 
 export function InvoiceExport({ invoices }: InvoiceExportProps) {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [status, setStatus] = useState('all');
+  const [customer, setCustomer] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   
   const handleExport = () => {
+    // Create filters object
+    const filters: ExportFilters = {
+      startDate: startDate || null,
+      endDate: endDate || null,
+      status: status as "draft" | "sent" | "paid" | "cancelled" | "all",
+      customer: customer || undefined
+    };
+    
     // Filter invoices based on criteria
-    const filteredInvoices = invoices.filter((invoice) => {
-      let include = true;
-      
-      // Filter by date range
-      if (startDate && new Date(invoice.date) < startDate) {
-        include = false;
-      }
-      
-      if (endDate) {
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        if (new Date(invoice.date) > endOfDay) {
-          include = false;
-        }
-      }
-      
-      // Filter by status
-      if (status !== 'all' && invoice.status !== status) {
-        include = false;
-      }
-      
-      return include;
-    });
+    const filteredInvoices = filterInvoices(invoices, filters);
     
     // Format invoices for export
     const exportData = formatInvoicesForExport(filteredInvoices);
@@ -61,6 +50,9 @@ export function InvoiceExport({ invoices }: InvoiceExportProps) {
     
     // Close the dialog
     setIsOpen(false);
+    
+    // Show success message
+    toast.success(`${filteredInvoices.length} invoices exported successfully`);
   };
 
   return (
@@ -135,11 +127,20 @@ export function InvoiceExport({ invoices }: InvoiceExportProps) {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Customer Name (Optional)</label>
+            <Input 
+              placeholder="Filter by customer name"
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+            />
           </div>
         </div>
         
