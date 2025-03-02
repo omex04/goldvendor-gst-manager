@@ -13,8 +13,12 @@ import { InvoiceItem } from './InvoiceItem';
 import { calculateInvoiceTotals, getGoldGSTRates } from '@/utils/gstCalculator';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { saveInvoice } from '@/services/invoiceService';
 
 export function InvoiceForm() {
+  const navigate = useNavigate();
   const [invoice, setInvoice] = useState({
     id: uuidv4(),
     invoiceNumber: `INV-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
@@ -39,6 +43,19 @@ export function InvoiceForm() {
   const [grandTotal, setGrandTotal] = useState(0);
   
   const goldRates = getGoldGSTRates();
+  
+  // Save invoice mutation
+  const saveInvoiceMutation = useMutation({
+    mutationFn: saveInvoice,
+    onSuccess: (invoiceId) => {
+      toast.success('Invoice saved successfully');
+      navigate(`/view-invoice/${invoiceId}`);
+    },
+    onError: (error) => {
+      toast.error('Failed to save invoice');
+      console.error(error);
+    },
+  });
   
   // Add a new empty item
   const addItem = () => {
@@ -131,29 +148,51 @@ export function InvoiceForm() {
   }, [invoice.items]);
   
   // Save the invoice
-  const saveInvoice = () => {
-    // In a real app, you would save to a database here
+  const saveInvoiceDraft = () => {
+    if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
+      toast.error('Please fill in customer details');
+      return;
+    }
+
+    if (invoice.items.length === 0) {
+      toast.error('Please add at least one item');
+      return;
+    }
+
     const completeInvoice = {
       ...invoice,
       subtotal,
       cgstTotal,
       sgstTotal,
       grandTotal,
+      status: 'draft' as const,
     };
     
-    console.log('Saving invoice:', completeInvoice);
-    
-    // Show success message
-    toast.success('Invoice saved successfully');
+    saveInvoiceMutation.mutate(completeInvoice);
   };
   
-  // Generate and download the invoice
+  // Generate and send the invoice
   const generateInvoice = () => {
-    // In a real app, you would generate a PDF or redirect to a print page
-    console.log('Generating invoice...');
+    if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
+      toast.error('Please fill in customer details');
+      return;
+    }
+
+    if (invoice.items.length === 0) {
+      toast.error('Please add at least one item');
+      return;
+    }
+
+    const completeInvoice = {
+      ...invoice,
+      subtotal,
+      cgstTotal,
+      sgstTotal,
+      grandTotal,
+      status: 'sent' as const,
+    };
     
-    // Show success message
-    toast.success('Invoice generated successfully');
+    saveInvoiceMutation.mutate(completeInvoice);
   };
 
   return (
@@ -352,10 +391,18 @@ export function InvoiceForm() {
           </div>
           
           <div className="mt-6 flex justify-end gap-4">
-            <Button variant="outline" onClick={saveInvoice}>
+            <Button 
+              variant="outline" 
+              onClick={saveInvoiceDraft}
+              disabled={saveInvoiceMutation.isPending}
+            >
               Save as Draft
             </Button>
-            <Button onClick={generateInvoice} className="bg-gold-500 hover:bg-gold-600">
+            <Button 
+              onClick={generateInvoice} 
+              className="bg-gold-500 hover:bg-gold-600"
+              disabled={saveInvoiceMutation.isPending}
+            >
               Generate Invoice
             </Button>
           </div>
