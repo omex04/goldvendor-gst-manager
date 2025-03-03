@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase';
 import { Invoice, InvoiceItem, Customer } from '@/types';
@@ -114,7 +115,7 @@ const mockInvoices: Invoice[] = [
     cgstTotal: 1290,
     sgstTotal: 1290,
     grandTotal: 88580,
-    status: 'pending',
+    status: 'sent',
   },
 ];
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { saveInvoice } from '@/services/invoiceService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Invoice } from '@/types';
 
 export function InvoiceForm() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export function InvoiceForm() {
     },
     items: [],
     notes: '',
-    status: 'draft',
+    status: 'draft' as const,
     paymentMethod: 'Cash/UPI/Bank Transfer',
   });
   
@@ -46,7 +46,6 @@ export function InvoiceForm() {
   
   const goldRates = getGoldGSTRates();
   
-  // Save invoice mutation
   const saveInvoiceMutation = useMutation({
     mutationFn: saveInvoice,
     onSuccess: (invoiceId) => {
@@ -59,7 +58,6 @@ export function InvoiceForm() {
     },
   });
   
-  // Add a new empty item
   const addItem = () => {
     const newItem = {
       id: uuidv4(),
@@ -83,7 +81,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Update an item in the items array
   const updateItem = (index: number, updatedItem: any) => {
     const updatedItems = [...invoice.items];
     updatedItems[index] = updatedItem;
@@ -94,7 +91,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Remove an item from the items array
   const removeItem = (index: number) => {
     const updatedItems = [...invoice.items];
     updatedItems.splice(index, 1);
@@ -105,7 +101,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Update customer information
   const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setInvoice({
@@ -117,7 +112,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Update invoice notes
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInvoice({
       ...invoice,
@@ -125,7 +119,6 @@ export function InvoiceForm() {
     });
   };
 
-  // Update invoice number
   const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInvoice({
       ...invoice,
@@ -133,15 +126,13 @@ export function InvoiceForm() {
     });
   };
   
-  // Update invoice status
   const handleStatusChange = (value: string) => {
     setInvoice({
       ...invoice,
-      status: value,
+      status: value as "draft" | "sent" | "paid" | "cancelled",
     });
   };
   
-  // Update payment method
   const handlePaymentMethodChange = (value: string) => {
     setInvoice({
       ...invoice,
@@ -149,7 +140,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Calculate totals whenever items change
   useEffect(() => {
     if (invoice.items.length > 0) {
       const { subtotal, cgstTotal, sgstTotal, grandTotal } = calculateInvoiceTotals(invoice.items);
@@ -165,7 +155,6 @@ export function InvoiceForm() {
     }
   }, [invoice.items]);
   
-  // Save the invoice
   const saveInvoiceDraft = () => {
     if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
       toast.error('Please fill in customer details');
@@ -177,19 +166,18 @@ export function InvoiceForm() {
       return;
     }
 
-    const completeInvoice = {
+    const completeInvoice: Invoice = {
       ...invoice,
       subtotal,
       cgstTotal,
       sgstTotal,
       grandTotal,
-      status: 'draft' as const,
+      status: 'draft',
     };
     
     saveInvoiceMutation.mutate(completeInvoice);
   };
   
-  // Generate and send the invoice
   const generateInvoice = () => {
     if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
       toast.error('Please fill in customer details');
@@ -201,12 +189,13 @@ export function InvoiceForm() {
       return;
     }
 
-    const completeInvoice = {
+    const completeInvoice: Invoice = {
       ...invoice,
       subtotal,
       cgstTotal,
       sgstTotal,
       grandTotal,
+      status: invoice.status,
     };
     
     saveInvoiceMutation.mutate(completeInvoice);

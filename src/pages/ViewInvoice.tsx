@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -36,7 +35,6 @@ const ViewInvoice = () => {
     enabled: !!id,
   });
 
-  // Mutation for marking invoice as paid
   const markAsPaidMutation = useMutation({
     mutationFn: markInvoiceAsPaid,
     onSuccess: () => {
@@ -50,21 +48,18 @@ const ViewInvoice = () => {
     },
   });
 
-  // Handle print functionality
   const handlePrint = useReactToPrint({
-    content: () => invoiceRef.current,
     documentTitle: `Invoice-${invoice?.invoiceNumber || 'unknown'}`,
     onAfterPrint: () => toast.success('Invoice printed successfully'),
+    contentRef: () => invoiceRef.current,
   });
 
-  // Wrapper function to use with the button's onClick
   const printInvoice = () => {
     if (invoiceRef.current) {
       handlePrint();
     }
   };
 
-  // Handle download PDF functionality
   const handleDownloadPDF = async () => {
     if (!invoiceRef.current) return;
 
@@ -100,7 +95,6 @@ const ViewInvoice = () => {
     }
   };
 
-  // Handle mark as paid
   const handleMarkAsPaid = () => {
     if (!id) return;
     markAsPaidMutation.mutate(id);
@@ -181,7 +175,6 @@ const ViewInvoice = () => {
           
           <Card className="border-0 shadow-sm overflow-hidden">
             <CardContent className="p-0" ref={invoiceRef}>
-              {/* Header */}
               <div className="flex flex-col md:flex-row justify-between p-6 border-b">
                 <div>
                   <h2 className="text-2xl font-bold text-amber-600">Gold Vendor</h2>
@@ -201,7 +194,6 @@ const ViewInvoice = () => {
                 </div>
               </div>
               
-              {/* Client & Payment Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border-b">
                 <div className="border p-4 rounded-lg bg-gray-50">
                   <h3 className="font-medium text-gray-700 mb-2">Bill To:</h3>
@@ -234,7 +226,6 @@ const ViewInvoice = () => {
                 </div>
               </div>
               
-              {/* Invoice Items */}
               <div className="p-6 border-b">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -289,7 +280,6 @@ const ViewInvoice = () => {
                 </div>
               </div>
               
-              {/* Terms and Totals */}
               <div className="grid grid-cols-1 md:grid-cols-2 p-6">
                 <div className="border p-4 rounded-lg bg-gray-50">
                   <h3 className="font-medium text-gray-700 mb-2">Terms & Conditions:</h3>
