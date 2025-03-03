@@ -17,9 +17,9 @@ import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-// Simple authentication context
+// Simple authentication check function
 const isAuthenticated = () => {
-  return localStorage.getItem("auth") === "true";
+  return localStorage.getItem("isAuthenticated") === "true";
 };
 
 // Protected route component

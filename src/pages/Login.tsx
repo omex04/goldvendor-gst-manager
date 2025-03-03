@@ -7,6 +7,12 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+// Sample credentials for testing
+const SAMPLE_CREDENTIALS = {
+  email: 'demo@example.com',
+  password: 'password123'
+};
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,15 +30,22 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be replaced with actual authentication logic
-      // For now, simulate a successful login with a delay
+      // Sample authentication logic for demo purposes
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store authentication state (in a real app, you'd store a token)
-      localStorage.setItem('isAuthenticated', 'true');
-      
-      toast.success('Login successful');
-      navigate('/');
+      // Check if credentials match our sample ones
+      if (email === SAMPLE_CREDENTIALS.email && password === SAMPLE_CREDENTIALS.password) {
+        // Store authentication state
+        localStorage.setItem('isAuthenticated', 'true');
+        
+        toast.success('Login successful! Welcome to Gold GST Manager');
+        navigate('/');
+      } else {
+        toast.error('Invalid credentials. Please try again.');
+        toast.info(`Hint: Use ${SAMPLE_CREDENTIALS.email} / ${SAMPLE_CREDENTIALS.password}`, {
+          duration: 5000
+        });
+      }
     } catch (error) {
       toast.error('Login failed. Please check your credentials.');
       console.error('Login error:', error);
@@ -84,6 +97,13 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+              </div>
+              <div className="pt-2">
+                <div className="bg-slate-100 p-3 rounded text-sm">
+                  <p className="font-medium">Demo Credentials:</p>
+                  <p>Email: {SAMPLE_CREDENTIALS.email}</p>
+                  <p>Password: {SAMPLE_CREDENTIALS.password}</p>
+                </div>
               </div>
             </CardContent>
             <CardFooter>
