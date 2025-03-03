@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { saveInvoice } from '@/services/invoiceService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function InvoiceForm() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export function InvoiceForm() {
     items: [],
     notes: '',
     status: 'draft',
+    paymentMethod: 'Cash/UPI/Bank Transfer',
   });
   
   const [subtotal, setSubtotal] = useState(0);
@@ -131,6 +133,22 @@ export function InvoiceForm() {
     });
   };
   
+  // Update invoice status
+  const handleStatusChange = (value: string) => {
+    setInvoice({
+      ...invoice,
+      status: value,
+    });
+  };
+  
+  // Update payment method
+  const handlePaymentMethodChange = (value: string) => {
+    setInvoice({
+      ...invoice,
+      paymentMethod: value,
+    });
+  };
+  
   // Calculate totals whenever items change
   useEffect(() => {
     if (invoice.items.length > 0) {
@@ -189,7 +207,6 @@ export function InvoiceForm() {
       cgstTotal,
       sgstTotal,
       grandTotal,
-      status: 'sent' as const,
     };
     
     saveInvoiceMutation.mutate(completeInvoice);
@@ -332,6 +349,68 @@ export function InvoiceForm() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+              <Label htmlFor="invoice-status">Status</Label>
+              <Select value={invoice.status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="invoice-payment-method">Payment Method</Label>
+              <Select value={invoice.paymentMethod} onValueChange={handlePaymentMethodChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cash/UPI/Bank Transfer">Cash/UPI/Bank Transfer</SelectItem>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                  <SelectItem value="UPI">UPI</SelectItem>
+                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="Credit Card">Credit Card</SelectItem>
+                  <SelectItem value="Cheque">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="invoice-due-date">Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className="w-full pl-3 text-left font-normal mt-1"
+                  >
+                    {invoice.dueDate ? (
+                      format(invoice.dueDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={invoice.dueDate}
+                    onSelect={(date) => setInvoice({ ...invoice, dueDate: date as Date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
           <div className="mb-4">
             <Button variant="outline" onClick={addItem} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />

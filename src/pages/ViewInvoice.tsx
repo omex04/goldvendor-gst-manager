@@ -52,6 +52,7 @@ const ViewInvoice = () => {
 
   // Handle print functionality
   const handlePrint = useReactToPrint({
+    content: () => invoiceRef.current,
     documentTitle: `Invoice-${invoice?.invoiceNumber || 'unknown'}`,
     onAfterPrint: () => toast.success('Invoice printed successfully'),
   });
@@ -178,130 +179,174 @@ const ViewInvoice = () => {
             </div>
           </div>
           
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6" ref={invoiceRef}>
-              <div className="flex flex-col md:flex-row justify-between pb-8 border-b">
+          <Card className="border-0 shadow-sm overflow-hidden">
+            <CardContent className="p-0" ref={invoiceRef}>
+              {/* Header */}
+              <div className="flex flex-col md:flex-row justify-between p-6 border-b">
                 <div>
-                  <h2 className="text-3xl font-bold text-gold-700">INVOICE</h2>
-                  <div className="mt-1 flex items-center">
-                    <span className="text-muted-foreground mr-2">#:</span>
-                    <span className="font-medium">{invoice.invoiceNumber}</span>
+                  <h2 className="text-2xl font-bold text-amber-600">Gold Vendor</h2>
+                  <div className="text-sm mt-2 space-y-1 text-gray-600">
+                    <p>123 Gold Street, Mumbai, Maharashtra 400001</p>
+                    <p>GST: 27AABCU9603R1ZX</p>
+                    <p>Phone: 9876543210</p>
                   </div>
                 </div>
                 
                 <div className="mt-4 md:mt-0 md:text-right">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Date: </span>
-                    <span>{formatDate(invoice.date)}</span>
+                  <h2 className="text-2xl font-bold text-gray-800">TAX INVOICE</h2>
+                  <div className="text-sm mt-2 space-y-1 text-gray-600">
+                    <p className="text-amber-600 font-semibold">#{invoice.invoiceNumber}</p>
+                    <p>Date: {formatDate(invoice.date)}</p>
                   </div>
-                  {invoice.dueDate && (
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Due Date: </span>
-                      <span>{formatDate(invoice.dueDate)}</span>
+                </div>
+              </div>
+              
+              {/* Client & Payment Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border-b">
+                <div className="border p-4 rounded-lg bg-gray-50">
+                  <h3 className="font-medium text-gray-700 mb-2">Bill To:</h3>
+                  <div className="space-y-1">
+                    <p className="font-bold">{invoice.customer.name}</p>
+                    <p className="text-gray-600">{invoice.customer.address}</p>
+                    <p className="text-gray-600">Phone: {invoice.customer.phone}</p>
+                    {invoice.customer.email && <p className="text-gray-600">Email: {invoice.customer.email}</p>}
+                  </div>
+                </div>
+                
+                <div className="border p-4 rounded-lg bg-gray-50">
+                  <h3 className="font-medium text-gray-700 mb-2">Payment Info:</h3>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Payment Method:</span>
+                      <span>{invoice.paymentMethod || 'Cash/UPI/Bank Transfer'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className={invoice.status === 'paid' ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>
+                        {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">GST Rate:</span>
+                      <span>3% (CGST 1.5% + SGST 1.5%)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Invoice Items */}
+              <div className="p-6 border-b">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Description</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">Weight (g)</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">Rate/g (₹)</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">Making (₹)</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">Amount (₹)</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">CGST (₹)</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">SGST (₹)</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">Total (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoice.items.map((item) => (
+                        <tr key={item.id} className="border-b last:border-0">
+                          <td className="py-4 px-4">
+                            <div className="font-medium">{item.name}</div>
+                            {item.description && (
+                              <div className="text-xs text-muted-foreground">{item.description}</div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 text-right">{item.weightInGrams}</td>
+                          <td className="py-4 px-4 text-right">
+                            {item.ratePerGram !== undefined
+                              ? item.ratePerGram.toLocaleString('en-IN')
+                              : '-'}
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            {item.makingCharges !== undefined
+                              ? item.makingCharges.toLocaleString('en-IN')
+                              : '-'}
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            {item.price.toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            {item.cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            {item.sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-4 px-4 text-right font-medium">
+                            {item.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              {/* Terms and Totals */}
+              <div className="grid grid-cols-1 md:grid-cols-2 p-6">
+                <div className="border p-4 rounded-lg bg-gray-50">
+                  <h3 className="font-medium text-gray-700 mb-2">Terms & Conditions:</h3>
+                  <ul className="list-disc list-inside space-y-1 text-gray-600 text-sm">
+                    <li>Payment is due upon receipt of the invoice</li>
+                    <li>Goods once sold cannot be returned</li>
+                    <li>All disputes are subject to Mumbai jurisdiction</li>
+                    <li>E. & O.E.</li>
+                  </ul>
+                  {invoice.notes && (
+                    <div className="mt-4">
+                      <h3 className="font-medium text-gray-700 mb-1">Notes:</h3>
+                      <p className="text-sm text-gray-600">{invoice.notes}</p>
                     </div>
                   )}
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-8 border-b">
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-3">FROM</h3>
-                  <div className="space-y-1">
-                    <p className="font-bold">Gold Jewelry Shop</p>
-                    <p>123 Jewelers Lane, Mumbai, Maharashtra 400001</p>
-                    <p>Phone: +91 98765 12345</p>
-                    <p>Email: contact@goldjewelry.com</p>
-                    <p>GSTIN: 27AADCG1234A1Z5</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-3">TO</h3>
-                  <div className="space-y-1">
-                    <p className="font-bold">{invoice.customer.name}</p>
-                    <p>{invoice.customer.address}</p>
-                    <p>Phone: {invoice.customer.phone}</p>
-                    {invoice.customer.email && <p>Email: {invoice.customer.email}</p>}
-                    {invoice.customer.gstNo && <p>GSTIN: {invoice.customer.gstNo}</p>}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="py-8 border-b">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="py-3 px-4 text-left font-medium">Item</th>
-                      <th className="py-3 px-4 text-left font-medium">HSN</th>
-                      <th className="py-3 px-4 text-right font-medium">Weight (g)</th>
-                      <th className="py-3 px-4 text-right font-medium">Rate/g (₹)</th>
-                      <th className="py-3 px-4 text-right font-medium">Making (₹)</th>
-                      <th className="py-3 px-4 text-right font-medium">Amount (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoice.items.map((item) => (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-4 px-4">
-                          <div className="font-medium">{item.name}</div>
-                          {item.description && (
-                            <div className="text-xs text-muted-foreground">{item.description}</div>
-                          )}
-                        </td>
-                        <td className="py-4 px-4">{item.hsnCode}</td>
-                        <td className="py-4 px-4 text-right">{item.weightInGrams}</td>
-                        <td className="py-4 px-4 text-right">
-                          {item.ratePerGram !== undefined
-                            ? item.ratePerGram.toLocaleString('en-IN')
-                            : '-'}
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          {item.makingCharges !== undefined
-                            ? item.makingCharges.toLocaleString('en-IN')
-                            : '-'}
-                        </td>
-                        <td className="py-4 px-4 text-right font-medium">
-                          {item.price.toLocaleString('en-IN')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div className="py-8 grid grid-cols-1 md:grid-cols-2">
-                <div>
-                  <h3 className="font-medium mb-3">Notes</h3>
-                  <p className="text-sm text-muted-foreground">{invoice.notes || 'No notes'}</p>
-                </div>
                 
                 <div className="mt-6 md:mt-0 md:ml-auto md:w-72">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal:</span>
-                      <span>₹{invoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">CGST (1.5%):</span>
-                      <span>₹{invoice.cgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">SGST (1.5%):</span>
-                      <span>₹{invoice.sgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total:</span>
-                      <span>₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    {invoice.paidAmount && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Paid:</span>
-                        <span>₹{invoice.paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <div className="border p-4 rounded-lg bg-gray-50">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-gray-600">
+                        <span>Subtotal:</span>
+                        <span>₹{invoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
-                    )}
+                      <div className="flex justify-between text-gray-600">
+                        <span>CGST (1.5%):</span>
+                        <span>₹{invoice.cgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600">
+                        <span>SGST (1.5%):</span>
+                        <span>₹{invoice.sgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between font-bold text-lg text-amber-600">
+                        <span>Total:</span>
+                        <span>₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      {invoice.paidAmount && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Paid:</span>
+                          <span>₹{invoice.paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-8 text-center">
+                    <div className="border-t pt-4">
+                      <p className="font-medium">Authorized Signatory</p>
+                      <p className="text-sm text-gray-600">Gold Vendor</p>
+                    </div>
                   </div>
                 </div>
+              </div>
+              
+              <div className="p-6 bg-gray-50 border-t text-center text-xs text-gray-500">
+                Thank you for your business!
               </div>
             </CardContent>
           </Card>
