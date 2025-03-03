@@ -91,6 +91,11 @@ export const register = async (userData: any): Promise<User> => {
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
+  // Check if email already exists
+  if (sampleUsers.some(user => user.email === userData.email)) {
+    throw new Error('Email already registered');
+  }
+  
   // In a real app, this would create a new user
   // For now, just return a mock user
   const newUser: User = {
@@ -104,4 +109,11 @@ export const register = async (userData: any): Promise<User> => {
   localStorage.setItem('isAuthenticated', 'true');
   
   return newUser;
+};
+
+// This function would be replaced with Supabase authentication in production
+export const migrateToSupabase = () => {
+  // Note: This is just a placeholder function that would be replaced
+  // when implementing Supabase authentication
+  console.log('Ready to migrate to Supabase authentication');
 };

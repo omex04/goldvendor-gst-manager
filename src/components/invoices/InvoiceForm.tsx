@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, ArrowRight, Download, Save, Eye } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Invoice, InvoiceItem } from '@/types';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // DatePicker component for reuse
 const DatePicker = ({ date, setDate, placeholder }) => {
@@ -54,6 +56,7 @@ const DatePicker = ({ date, setDate, placeholder }) => {
 
 export function InvoiceForm() {
   const navigate = useNavigate();
+  const invoiceRef = useRef(null);
   const [vendorInfo, setVendorInfo] = useState({
     name: 'Your Jewelry Shop',
     address: '123 Jewelry Lane, Diamond District',
@@ -124,10 +127,10 @@ export function InvoiceForm() {
   
   const saveInvoiceMutation = useMutation({
     mutationFn: saveInvoice,
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice saved successfully');
-      navigate('/invoice-history');
+      navigate(`/invoice/${id}`);
     },
     onError: (error) => {
       toast.error('Failed to save invoice');
@@ -248,6 +251,48 @@ export function InvoiceForm() {
     setShowPreview(!showPreview);
   };
 
+  const downloadPDF = () => {
+    if (!invoiceRef.current || !showPreview) {
+      toast.error('Please preview the invoice before downloading');
+      return;
+    }
+
+    toast.info('Generating PDF...');
+    
+    const invoiceElement = invoiceRef.current;
+    
+    html2canvas(invoiceElement, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`Invoice-${invoice.invoiceNumber}.pdf`);
+      
+      toast.success('PDF Downloaded Successfully');
+    }).catch(err => {
+      console.error('Error generating PDF:', err);
+      toast.error('Failed to generate PDF');
+    });
+  };
+
+  const navigateToInvoice = (direction: 'prev' | 'next') => {
+    // For now, this just navigates to the invoice history page
+    // In a real implementation, it would navigate to the previous or next invoice
+    navigate('/invoice-history');
+  };
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
@@ -364,6 +409,9 @@ export function InvoiceForm() {
                       <SelectItem value="UPI">UPI</SelectItem>
                       <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                       <SelectItem value="Cash/UPI/Bank Transfer">Multiple Methods</SelectItem>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                      <SelectItem value="Debit Card">Debit Card</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -478,7 +526,7 @@ export function InvoiceForm() {
             </Card>
           </>
         ) : (
-          <Card className="p-6">
+          <Card className="p-6" ref={invoiceRef}>
             <div className="border-b pb-4 mb-4">
               <h1 className="text-2xl font-bold text-center">{vendorInfo.name}</h1>
               <p className="text-center text-gray-600">{vendorInfo.address}</p>
@@ -574,16 +622,47 @@ export function InvoiceForm() {
         )}
 
         <div className="flex justify-between items-center mt-8">
-          <Button type="button" variant="outline" onClick={togglePreview}>
-            {showPreview ? 'Edit Invoice' : 'Preview Invoice'}
-          </Button>
           <div className="space-x-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => navigateToInvoice('prev')}
+              disabled={true} // Would be enabled in a real implementation
+            >
+              <ArrowLeft className="mr-1" size={16} /> Previous
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => navigateToInvoice('next')}
+              disabled={true} // Would be enabled in a real implementation
+            >
+              Next <ArrowRight className="ml-1" size={16} />
+            </Button>
+          </div>
+          
+          <div className="space-x-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={togglePreview}
+            >
+              <Eye className="mr-1" size={16} /> {showPreview ? 'Edit Invoice' : 'Preview Invoice'}
+            </Button>
+            
             {showPreview && (
-              <Button type="button" variant="outline">
-                Download PDF
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={downloadPDF}
+              >
+                <Download className="mr-1" size={16} /> Download PDF
               </Button>
             )}
-            <Button type="submit">Save Invoice</Button>
+            
+            <Button type="submit">
+              <Save className="mr-1" size={16} /> Save Invoice
+            </Button>
           </div>
         </div>
       </div>
