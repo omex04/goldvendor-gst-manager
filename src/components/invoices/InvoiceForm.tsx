@@ -188,20 +188,30 @@ export function InvoiceForm() {
 
   const handleItemChange = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
     const { name, value } = e.target;
-    const numValue = name === 'name' || name === 'description' ? value : parseFloat(value) || 0;
     
     setInvoice(prev => {
       const updatedItems = prev.items.map(item => {
         if (item.id === id) {
-          const updatedItem = { ...item, [name]: numValue };
+          // Create a copy of the item
+          const updatedItem = { ...item };
           
-          // Recalculate price if weight or rate changes
-          if (name === 'weightInGrams' || name === 'ratePerGram' || name === 'makingCharges') {
-            const weight = name === 'weightInGrams' ? numValue : item.weightInGrams || 0;
-            const rate = name === 'ratePerGram' ? numValue : item.ratePerGram || 0;
-            const making = name === 'makingCharges' ? numValue : item.makingCharges || 0;
+          // Handle different field types
+          if (name === 'name' || name === 'description') {
+            // String fields
+            updatedItem[name] = value;
+          } else {
+            // Number fields - ensure proper conversion to number
+            const numValue = parseFloat(value) || 0;
+            updatedItem[name] = numValue;
             
-            updatedItem.price = calculatePriceByWeight(weight, rate, making);
+            // Recalculate price if weight or rate changes
+            if (name === 'weightInGrams' || name === 'ratePerGram' || name === 'makingCharges') {
+              const weight = name === 'weightInGrams' ? numValue : item.weightInGrams || 0;
+              const rate = name === 'ratePerGram' ? numValue : item.ratePerGram || 0;
+              const making = name === 'makingCharges' ? numValue : item.makingCharges || 0;
+              
+              updatedItem.price = calculatePriceByWeight(weight, rate, making);
+            }
           }
           
           // Recalculate GST
