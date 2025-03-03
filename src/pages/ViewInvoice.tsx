@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -53,7 +54,7 @@ const ViewInvoice = () => {
   const handlePrint = useReactToPrint({
     documentTitle: `Invoice-${invoice?.invoiceNumber || 'unknown'}`,
     onAfterPrint: () => toast.success('Invoice printed successfully'),
-    content: () => invoiceRef.current,
+    contentRef: invoiceRef,
   });
 
   const printInvoice = () => {
