@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,24 @@ import { Invoice } from '@/types';
 
 export function InvoiceForm() {
   const navigate = useNavigate();
-  const [invoice, setInvoice] = useState({
+  const [invoice, setInvoice] = useState<{
+    id: string;
+    invoiceNumber: string;
+    date: Date;
+    dueDate: Date;
+    customer: {
+      id: string;
+      name: string;
+      address: string;
+      phone: string;
+      email: string;
+      gstNo: string;
+    };
+    items: any[];
+    notes: string;
+    status: "draft" | "sent" | "paid" | "cancelled";
+    paymentMethod: string;
+  }>({
     id: uuidv4(),
     invoiceNumber: `INV-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
     date: new Date(),
@@ -35,7 +53,7 @@ export function InvoiceForm() {
     },
     items: [],
     notes: '',
-    status: 'draft' as const,
+    status: 'draft',
     paymentMethod: 'Cash/UPI/Bank Transfer',
   });
   
@@ -195,7 +213,6 @@ export function InvoiceForm() {
       cgstTotal,
       sgstTotal,
       grandTotal,
-      status: invoice.status,
     };
     
     saveInvoiceMutation.mutate(completeInvoice);
