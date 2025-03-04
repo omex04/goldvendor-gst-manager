@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -180,6 +179,13 @@ const ViewInvoice = () => {
           
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6" ref={invoiceRef}>
+              <div className="text-center border-b pb-4 mb-6">
+                <h2 className="text-2xl font-bold text-gold-700">Your Jewelry Shop</h2>
+                <p className="text-sm">123 Jewelry Lane, Diamond District</p>
+                <p className="text-sm">Phone: 9876543210 | Email: contact@yourjewelryshop.com</p>
+                <p className="text-sm">GST No: 27AABCD1234A1Z5</p>
+              </div>
+              
               <div className="flex flex-col md:flex-row justify-between pb-8 border-b">
                 <div>
                   <h2 className="text-3xl font-bold text-gold-700">INVOICE</h2>

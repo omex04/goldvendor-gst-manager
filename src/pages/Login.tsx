@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,14 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check if already authenticated
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -24,11 +32,16 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be replaced with actual authentication logic
-      // For now, simulate a successful login with a delay
+      // In a real app with Supabase, you would use:
+      // const { error } = await supabase.auth.signInWithPassword({
+      //   email,
+      //   password,
+      // });
+      
+      // For now, simulate a successful login with any credentials
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store authentication state (in a real app, you'd store a token)
+      // Store authentication state
       localStorage.setItem('isAuthenticated', 'true');
       
       toast.success('Login successful');
@@ -42,24 +55,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gold-600">Gold GST Manager</h1>
-          <p className="text-gray-600 mt-2">Login to your account</p>
+          <h1 className="text-3xl font-bold text-gold-600 dark:text-gold-500">Gold GST Manager</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Login to your account</p>
         </div>
         
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>
+            <CardTitle className="dark:text-white">Login</CardTitle>
+            <CardDescription className="dark:text-gray-400">
               Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="dark:text-gray-300">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -67,12 +80,13 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Button variant="link" className="px-0 font-normal h-auto" type="button">
+                  <Label htmlFor="password" className="dark:text-gray-300">Password</Label>
+                  <Button variant="link" className="px-0 font-normal h-auto dark:text-gray-400" type="button">
                     Forgot password?
                   </Button>
                 </div>
@@ -83,13 +97,14 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
             </CardContent>
             <CardFooter>
               <Button 
                 type="submit" 
-                className="w-full bg-gold-500 hover:bg-gold-600" 
+                className="w-full bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700" 
                 disabled={isLoading}
               >
                 {isLoading ? 'Logging in...' : 'Log in'}
@@ -99,9 +114,9 @@ const Login = () => {
         </Card>
         
         <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Don't have an account?{" "}
-            <Button variant="link" className="p-0 font-normal h-auto" onClick={() => navigate('/register')}>
+            <Button variant="link" className="p-0 font-normal h-auto dark:text-gold-400" onClick={() => navigate('/register')}>
               Create an account
             </Button>
           </p>

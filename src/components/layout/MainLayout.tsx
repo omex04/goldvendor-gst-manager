@@ -1,10 +1,12 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BarChart3, FileText, Home, LayoutDashboard, LogOut, Settings } from 'lucide-react';
+import { BarChart3, FileText, Home, LayoutDashboard, LogOut, Moon, Settings, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/ui/theme-provider';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -12,6 +14,8 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -20,16 +24,21 @@ export function MainLayout({ children }: MainLayoutProps) {
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    navigate('/login');
+  };
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-secondary/30">
-        <Sidebar className="border-r border-border bg-background">
+      <div className="min-h-screen flex w-full bg-secondary/30 dark:bg-gray-900">
+        <Sidebar className="border-r border-border bg-background dark:bg-gray-800 dark:border-gray-700">
           <div className="p-4 flex items-center justify-center py-8">
             <Link to="/" className="flex items-center gap-2 text-xl font-semibold">
               <div className="w-8 h-8 rounded-md bg-gold-500 flex items-center justify-center">
                 <Home className="w-5 h-5 text-black" />
               </div>
-              <span className="text-foreground">Gold GST</span>
+              <span className="text-foreground dark:text-white">Gold GST</span>
             </Link>
           </div>
           
@@ -42,8 +51,8 @@ export function MainLayout({ children }: MainLayoutProps) {
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
                     location.pathname === item.path
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground/70 hover:bg-secondary hover:text-foreground"
+                      ? "bg-primary text-primary-foreground dark:bg-gold-600 dark:text-white"
+                      : "text-foreground/70 hover:bg-secondary hover:text-foreground dark:text-gray-300 dark:hover:bg-gray-700"
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -53,30 +62,41 @@ export function MainLayout({ children }: MainLayoutProps) {
             </nav>
           </SidebarContent>
           
-          <SidebarFooter className="p-4 mt-auto border-t">
+          <SidebarFooter className="p-4 mt-auto border-t dark:border-gray-700">
             <div className="flex items-center gap-3">
               <Avatar>
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-secondary text-secondary-foreground">GV</AvatarFallback>
+                <AvatarFallback className="bg-secondary text-secondary-foreground dark:bg-gray-700 dark:text-gray-300">GV</AvatarFallback>
               </Avatar>
-              <div>
-                <p className="text-sm font-medium">Gold Vendor</p>
-                <p className="text-xs text-muted-foreground">vendor@example.com</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium dark:text-white">Gold Vendor</p>
+                <p className="text-xs text-muted-foreground dark:text-gray-400">vendor@example.com</p>
               </div>
+              <Button variant="ghost" size="icon" className="ml-auto" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
           </SidebarFooter>
         </Sidebar>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-4 h-16 border-b bg-background flex items-center justify-between">
+        <main className="flex-1 overflow-auto dark:bg-gray-900">
+          <div className="p-4 h-16 border-b bg-background dark:bg-gray-800 dark:border-gray-700 flex items-center justify-between">
             <div className="flex items-center">
               <SidebarTrigger className="mr-4" />
-              <h1 className="text-lg font-medium">
+              <h1 className="text-lg font-medium dark:text-white">
                 {menuItems.find(item => item.path === location.pathname)?.label || 'Gold GST Manager'}
               </h1>
             </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="ml-auto mr-2"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
           </div>
-          <div className="p-6 animate-fade-in">
+          <div className="p-6 animate-fade-in dark:text-white">
             {children}
           </div>
         </main>
