@@ -228,7 +228,7 @@ CREATE POLICY "Users can only access their own invoice items"
             <CardContent className="space-y-4 dark:text-gray-300">
               <ol className="list-decimal list-inside space-y-3">
                 <li>Register a new user through your application</li>
-                <li>Verify the user appears in the "Authentication" > "Users" section in Supabase</li>
+                <li>Verify the user appears in the "Authentication" {'>'} "Users" section in Supabase</li>
                 <li>Test creating an invoice and check that data is stored in your database tables</li>
               </ol>
             </CardContent>
