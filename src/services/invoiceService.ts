@@ -1,186 +1,275 @@
 
-import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase';
 import { Invoice, InvoiceItem, Customer } from '@/types';
 
-// Mock data for invoices
-const mockInvoices: Invoice[] = [
-  {
-    id: '1',
-    invoiceNumber: 'INV-001',
-    date: new Date('2023-05-10'),
-    dueDate: new Date('2023-05-17'),
-    customer: {
-      id: 'c1',
-      name: 'Rajesh Sharma',
-      address: '123 Gandhi Road, Mumbai',
-      phone: '9876543210',
-      email: 'rajesh@example.com',
-      gstNo: '27AADCG1234A1Z5',
-    },
-    items: [
-      {
-        id: 'i1',
-        name: 'Gold Ring 22KT',
-        hsnCode: '7113',
-        quantity: 1,
-        weightInGrams: 10,
-        ratePerGram: 5500,
-        price: 55000,
-        makingCharges: 2500,
-        cgstRate: 1.5,
-        sgstRate: 1.5,
-        cgstAmount: 862.5,
-        sgstAmount: 862.5,
-        totalAmount: 59225,
-      }
-    ],
-    subtotal: 57500,
-    cgstTotal: 862.5,
-    sgstTotal: 862.5,
-    grandTotal: 59225,
-    status: 'paid',
-    paidAmount: 59225,
-    paidDate: new Date('2023-05-11'),
-    paymentMethod: 'Cash/UPI/Bank Transfer',
-  },
-  {
-    id: '2',
-    invoiceNumber: 'INV-002',
-    date: new Date('2023-05-15'),
-    dueDate: new Date('2023-05-22'),
-    customer: {
-      id: 'c2',
-      name: 'Priya Patel',
-      address: '45 Marine Drive, Mumbai',
-      phone: '8907654321',
-      email: 'priya@example.com',
-      gstNo: '',
-    },
-    items: [
-      {
-        id: 'i2',
-        name: 'Gold Necklace 24KT',
-        hsnCode: '7113',
-        quantity: 1,
-        weightInGrams: 20,
-        ratePerGram: 6000,
-        price: 120000,
-        makingCharges: 5000,
-        cgstRate: 1.5,
-        sgstRate: 1.5,
-        cgstAmount: 1875,
-        sgstAmount: 1875,
-        totalAmount: 128750,
-      }
-    ],
-    subtotal: 125000,
-    cgstTotal: 1875,
-    sgstTotal: 1875,
-    grandTotal: 128750,
-    status: 'sent',
-    notes: 'Please make payment within due date',
-  },
-  {
-    id: '3',
-    invoiceNumber: 'INV-003',
-    date: new Date('2023-05-20'),
-    dueDate: new Date('2023-05-27'),
-    customer: {
-      id: 'c3',
-      name: 'Amit Desai',
-      address: '78 Juhu Beach Road, Mumbai',
-      phone: '7654321890',
-      email: 'amit@example.com',
-      gstNo: '27AABCD5678E1Z8',
-    },
-    items: [
-      {
-        id: 'i3',
-        name: 'Gold Bracelet 22KT',
-        hsnCode: '7113',
-        quantity: 1,
-        weightInGrams: 15,
-        ratePerGram: 5500,
-        price: 82500,
-        makingCharges: 3500,
-        cgstRate: 1.5,
-        sgstRate: 1.5,
-        cgstAmount: 1290,
-        sgstAmount: 1290,
-        totalAmount: 88580,
-      }
-    ],
-    subtotal: 86000,
-    cgstTotal: 1290,
-    sgstTotal: 1290,
-    grandTotal: 88580,
-    status: 'sent',
-  },
-];
-
-// Mock data storage
-let invoicesData = [...mockInvoices];
-
-// Fetch all invoices
 export async function fetchInvoices(): Promise<Invoice[]> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return invoicesData;
-}
+  const { data: invoicesData, error: invoicesError } = await supabase
+    .from('invoices')
+    .select('*');
 
-// Get invoice by ID
-export async function getInvoiceById(id: string): Promise<Invoice | null> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const invoice = invoicesData.find(inv => inv.id === id);
-  return invoice || null;
-}
+  if (invoicesError) {
+    console.error('Error fetching invoices:', invoicesError);
+    return [];
+  }
 
-// Save invoice
-export async function saveInvoice(invoice: Invoice): Promise<string> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // New invoice
-  if (!invoicesData.some(inv => inv.id === invoice.id)) {
-    const newInvoice = {
-      ...invoice,
-      id: invoice.id || uuidv4(),
+  // Get all customers for the invoices
+  const { data: customersData, error: customersError } = await supabase
+    .from('customers')
+    .select('*');
+
+  if (customersError) {
+    console.error('Error fetching customers:', customersError);
+    return [];
+  }
+
+  // Get all invoice items
+  const { data: itemsData, error: itemsError } = await supabase
+    .from('invoice_items')
+    .select('*');
+
+  if (itemsError) {
+    console.error('Error fetching invoice items:', itemsError);
+    return [];
+  }
+
+  // Map the data to our Invoice type
+  const invoices: Invoice[] = invoicesData.map(invoice => {
+    const customer = customersData.find(c => c.id === invoice.customer_id);
+    const items = itemsData.filter(item => item.invoice_id === invoice.id);
+
+    return {
+      id: invoice.id,
+      invoiceNumber: invoice.invoice_number,
+      date: new Date(invoice.date),
+      dueDate: invoice.due_date ? new Date(invoice.due_date) : undefined,
+      customer: {
+        id: customer?.id || '',
+        name: customer?.name || '',
+        address: customer?.address || '',
+        phone: customer?.phone || '',
+        email: customer?.email || '',
+        gstNo: customer?.gst_no || '',
+      },
+      items: items.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || undefined,
+        hsnCode: item.hsn_code,
+        quantity: item.quantity,
+        weightInGrams: item.weight_in_grams || undefined,
+        ratePerGram: item.rate_per_gram || undefined,
+        price: item.price,
+        makingCharges: item.making_charges || undefined,
+        cgstRate: item.cgst_rate,
+        sgstRate: item.sgst_rate,
+        cgstAmount: item.cgst_amount,
+        sgstAmount: item.sgst_amount,
+        totalAmount: item.total_amount,
+      })),
+      subtotal: invoice.subtotal,
+      cgstTotal: invoice.cgst_total,
+      sgstTotal: invoice.sgst_total,
+      grandTotal: invoice.grand_total,
+      notes: invoice.notes || undefined,
+      status: invoice.status as "draft" | "sent" | "paid" | "cancelled",
+      paidAmount: invoice.paid_amount || undefined,
+      paidDate: invoice.paid_date ? new Date(invoice.paid_date) : undefined,
+      paymentMethod: invoice.payment_method || undefined,
     };
-    invoicesData.push(newInvoice);
-    return newInvoice.id;
-  } 
-  // Update existing invoice
-  else {
-    invoicesData = invoicesData.map(inv => 
-      inv.id === invoice.id ? { ...invoice } : inv
-    );
-    return invoice.id;
+  });
+
+  return invoices;
+}
+
+export async function getInvoiceById(id: string): Promise<Invoice | null> {
+  const { data: invoice, error: invoiceError } = await supabase
+    .from('invoices')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (invoiceError) {
+    console.error('Error fetching invoice:', invoiceError);
+    return null;
+  }
+
+  // Get customer data
+  const { data: customer, error: customerError } = await supabase
+    .from('customers')
+    .select('*')
+    .eq('id', invoice.customer_id)
+    .single();
+
+  if (customerError) {
+    console.error('Error fetching customer:', customerError);
+    return null;
+  }
+
+  // Get invoice items
+  const { data: items, error: itemsError } = await supabase
+    .from('invoice_items')
+    .select('*')
+    .eq('invoice_id', id);
+
+  if (itemsError) {
+    console.error('Error fetching invoice items:', itemsError);
+    return null;
+  }
+
+  return {
+    id: invoice.id,
+    invoiceNumber: invoice.invoice_number,
+    date: new Date(invoice.date),
+    dueDate: invoice.due_date ? new Date(invoice.due_date) : undefined,
+    customer: {
+      id: customer.id,
+      name: customer.name,
+      address: customer.address,
+      phone: customer.phone,
+      email: customer.email || '',
+      gstNo: customer.gst_no || '',
+    },
+    items: items.map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || undefined,
+      hsnCode: item.hsn_code,
+      quantity: item.quantity,
+      weightInGrams: item.weight_in_grams || undefined,
+      ratePerGram: item.rate_per_gram || undefined,
+      price: item.price,
+      makingCharges: item.making_charges || undefined,
+      cgstRate: item.cgst_rate,
+      sgstRate: item.sgst_rate,
+      cgstAmount: item.cgst_amount,
+      sgstAmount: item.sgst_amount,
+      totalAmount: item.total_amount,
+    })),
+    subtotal: invoice.subtotal,
+    cgstTotal: invoice.cgst_total,
+    sgstTotal: invoice.sgst_total,
+    grandTotal: invoice.grand_total,
+    notes: invoice.notes || undefined,
+    status: invoice.status as "draft" | "sent" | "paid" | "cancelled",
+    paidAmount: invoice.paid_amount || undefined,
+    paidDate: invoice.paid_date ? new Date(invoice.paid_date) : undefined,
+    paymentMethod: invoice.payment_method || undefined,
+  };
+}
+
+export async function saveInvoice(invoice: Invoice): Promise<string> {
+  // First, save or update customer
+  const { data: customer, error: customerError } = await supabase
+    .from('customers')
+    .upsert({
+      id: invoice.customer.id || undefined,
+      name: invoice.customer.name,
+      address: invoice.customer.address,
+      phone: invoice.customer.phone,
+      email: invoice.customer.email || null,
+      gst_no: invoice.customer.gstNo || null,
+    })
+    .select()
+    .single();
+
+  if (customerError) {
+    console.error('Error saving customer:', customerError);
+    throw new Error('Failed to save customer');
+  }
+
+  // Then, save or update invoice
+  const { data: savedInvoice, error: invoiceError } = await supabase
+    .from('invoices')
+    .upsert({
+      id: invoice.id || undefined,
+      invoice_number: invoice.invoiceNumber,
+      date: invoice.date.toISOString(),
+      due_date: invoice.dueDate ? invoice.dueDate.toISOString() : null,
+      customer_id: customer.id,
+      subtotal: invoice.subtotal,
+      cgst_total: invoice.cgstTotal,
+      sgst_total: invoice.sgstTotal,
+      grand_total: invoice.grandTotal,
+      notes: invoice.notes || null,
+      status: invoice.status,
+      paid_amount: invoice.paidAmount || null,
+      paid_date: invoice.paidDate ? invoice.paidDate.toISOString() : null,
+      payment_method: invoice.paymentMethod || null,
+    })
+    .select()
+    .single();
+
+  if (invoiceError) {
+    console.error('Error saving invoice:', invoiceError);
+    throw new Error('Failed to save invoice');
+  }
+
+  // Finally, save or update invoice items
+  const invoiceItems = invoice.items.map(item => ({
+    id: item.id || undefined,
+    invoice_id: savedInvoice.id,
+    name: item.name,
+    description: item.description || null,
+    hsn_code: item.hsnCode,
+    quantity: item.quantity,
+    weight_in_grams: item.weightInGrams || null,
+    rate_per_gram: item.ratePerGram || null,
+    price: item.price,
+    making_charges: item.makingCharges || null,
+    cgst_rate: item.cgstRate,
+    sgst_rate: item.sgstRate,
+    cgst_amount: item.cgstAmount,
+    sgst_amount: item.sgstAmount,
+    total_amount: item.totalAmount,
+  }));
+
+  const { error: itemsError } = await supabase
+    .from('invoice_items')
+    .upsert(invoiceItems);
+
+  if (itemsError) {
+    console.error('Error saving invoice items:', itemsError);
+    throw new Error('Failed to save invoice items');
+  }
+
+  return savedInvoice.id;
+}
+
+export async function markInvoiceAsPaid(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('invoices')
+    .update({
+      status: 'paid',
+      paid_date: new Date().toISOString(),
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error marking invoice as paid:', error);
+    throw new Error('Failed to mark invoice as paid');
   }
 }
 
-// Mark invoice as paid
-export async function markInvoiceAsPaid(id: string): Promise<void> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  invoicesData = invoicesData.map(invoice => {
-    if (invoice.id === id) {
-      return {
-        ...invoice,
-        status: 'paid',
-        paidDate: new Date(),
-      };
-    }
-    return invoice;
-  });
-}
-
-// Delete invoice
 export async function deleteInvoice(id: string): Promise<void> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  invoicesData = invoicesData.filter(invoice => invoice.id !== id);
+  // First delete related invoice items
+  const { error: itemsError } = await supabase
+    .from('invoice_items')
+    .delete()
+    .eq('invoice_id', id);
+
+  if (itemsError) {
+    console.error('Error deleting invoice items:', itemsError);
+    throw new Error('Failed to delete invoice items');
+  }
+
+  // Then delete the invoice
+  const { error: invoiceError } = await supabase
+    .from('invoices')
+    .delete()
+    .eq('id', id);
+
+  if (invoiceError) {
+    console.error('Error deleting invoice:', invoiceError);
+    throw new Error('Failed to delete invoice');
+  }
 }

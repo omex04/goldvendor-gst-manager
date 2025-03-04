@@ -1,29 +1,34 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { register } from '@/services/authService';
 
 const Register = () => {
-  const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    businessName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password || !confirmPassword) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
@@ -31,11 +36,14 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      await register({ name, email, password });
-      toast.success('Registration successful!');
-      navigate('/');
+      // In a real app, this would be replaced with actual registration logic
+      // For now, simulate a successful registration with a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('Registration successful! Please login.');
+      navigate('/login');
     } catch (error) {
-      toast.error('Registration failed');
+      toast.error('Registration failed. Please try again.');
       console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
@@ -43,90 +51,91 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
-            Enter your information to create an account
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gold-600">Gold GST Manager</h1>
+          <p className="text-gray-600 mt-2">Create a new account</p>
+        </div>
         
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Full Name
-              </label>
-              <Input
-                id="name"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="text-sm font-medium">
-                Confirm Password
-              </label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-          </CardContent>
-          
-          <CardFooter className="flex flex-col">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : 'Create account'}
-            </Button>
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
+        <Card>
+          <CardHeader>
+            <CardTitle>Register</CardTitle>
+            <CardDescription>
+              Create an account to get started
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleRegister}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="businessName">Business Name</Label>
+                <Input
+                  id="businessName"
+                  name="businessName"
+                  placeholder="Your Business Name"
+                  value={formData.businessName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
               <Button 
-                variant="link" 
-                className="p-0 h-auto font-normal" 
-                onClick={() => navigate('/login')}
+                type="submit" 
+                className="w-full bg-gold-500 hover:bg-gold-600" 
+                disabled={isLoading}
               >
-                Login
+                {isLoading ? 'Creating account...' : 'Create account'}
               </Button>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+            </CardFooter>
+          </form>
+        </Card>
+        
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-600">
+            Already have an account?{" "}
+            <Button variant="link" className="p-0 font-normal h-auto" onClick={() => navigate('/login')}>
+              Log in
+            </Button>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

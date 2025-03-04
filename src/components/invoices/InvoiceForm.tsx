@@ -1,100 +1,29 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { CalendarIcon, ArrowLeft, ArrowRight, Download, Save, Eye } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { useNavigate } from 'react-router-dom';
+import { Label } from '@/components/ui/label';
+import { InvoiceItem } from './InvoiceItem';
+import { calculateInvoiceTotals, getGoldGSTRates } from '@/utils/gstCalculator';
 import { v4 as uuidv4 } from 'uuid';
-import { calculateGST, getGoldGSTRates, calculatePriceByWeight, calculateInvoiceTotals } from '@/utils/gstCalculator';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { saveInvoice } from '@/services/invoiceService';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Invoice, InvoiceItem } from '@/types';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-
-// DatePicker component for reuse
-const DatePicker = ({ date, setDate, placeholder }) => {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
-  );
-};
 
 export function InvoiceForm() {
   const navigate = useNavigate();
-  const invoiceRef = useRef(null);
-  const [vendorInfo, setVendorInfo] = useState({
-    name: 'Your Jewelry Shop',
-    address: '123 Jewelry Lane, Diamond District',
-    phone: '9876543210',
-    email: 'contact@yourjewelryshop.com',
-    gstNo: '27AABCD1234A1Z5',
-    panNo: 'AABCD1234A',
-    bankDetails: {
-      accountName: 'Your Jewelry Shop',
-      accountNumber: '1234567890',
-      bankName: 'State Bank of India',
-      ifscCode: 'SBIN0001234',
-      branch: 'Diamond District Branch',
-    },
-  });
-
-  const [invoice, setInvoice] = useState<{
-    id: string;
-    invoiceNumber: string;
-    date: Date;
-    dueDate: Date;
-    customer: {
-      id: string;
-      name: string;
-      address: string;
-      phone: string;
-      email: string;
-      gstNo: string;
-    };
-    items: InvoiceItem[];
-    notes: string;
-    status: "draft" | "sent" | "paid" | "cancelled";
-    paymentMethod: string;
-  }>({
+  const [invoice, setInvoice] = useState({
     id: uuidv4(),
     invoiceNumber: `INV-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
     date: new Date(),
-    dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
+    dueDate: new Date(new Date().setDate(new Date().getDate() + 7)),
     customer: {
       id: uuidv4(),
       name: '',
@@ -106,566 +35,381 @@ export function InvoiceForm() {
     items: [],
     notes: '',
     status: 'draft',
-    paymentMethod: 'Cash/UPI/Bank Transfer',
   });
   
   const [subtotal, setSubtotal] = useState(0);
   const [cgstTotal, setCgstTotal] = useState(0);
   const [sgstTotal, setSgstTotal] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
-  const [showPreview, setShowPreview] = useState(false);
-
-  useEffect(() => {
-    const { subtotal, cgstTotal, sgstTotal, grandTotal } = calculateInvoiceTotals(invoice.items);
-    setSubtotal(subtotal);
-    setCgstTotal(cgstTotal);
-    setSgstTotal(sgstTotal);
-    setGrandTotal(grandTotal);
-  }, [invoice.items]);
-
-  const queryClient = useQueryClient();
   
+  const goldRates = getGoldGSTRates();
+  
+  // Save invoice mutation
   const saveInvoiceMutation = useMutation({
     mutationFn: saveInvoice,
-    onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    onSuccess: (invoiceId) => {
       toast.success('Invoice saved successfully');
-      navigate(`/invoice/${id}`);
+      navigate(`/view-invoice/${invoiceId}`);
     },
     onError: (error) => {
       toast.error('Failed to save invoice');
-      console.error('Error saving invoice:', error);
+      console.error(error);
     },
   });
-
-  const handleAddItem = () => {
-    const goldRates = getGoldGSTRates();
-    const newItem: InvoiceItem = {
+  
+  // Add a new empty item
+  const addItem = () => {
+    const newItem = {
       id: uuidv4(),
       name: '',
-      description: '',
       hsnCode: '7113',
       quantity: 1,
-      weightInGrams: 0,
-      ratePerGram: 0,
+      weightInGrams: '',
+      ratePerGram: '',
       price: 0,
       makingCharges: 0,
       cgstRate: goldRates.cgst,
       sgstRate: goldRates.sgst,
       cgstAmount: 0,
       sgstAmount: 0,
-      totalAmount: 0
+      totalAmount: 0,
     };
     
-    setInvoice(prev => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-  };
-
-  const handleRemoveItem = (id: string) => {
-    setInvoice(prev => ({
-      ...prev,
-      items: prev.items.filter(item => item.id !== id),
-    }));
+    setInvoice({
+      ...invoice,
+      items: [...invoice.items, newItem],
+    });
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Update an item in the items array
+  const updateItem = (index: number, updatedItem: any) => {
+    const updatedItems = [...invoice.items];
+    updatedItems[index] = updatedItem;
     
-    if (!invoice.customer.name || invoice.items.length === 0) {
-      toast.error('Please add customer details and at least one item');
+    setInvoice({
+      ...invoice,
+      items: updatedItems,
+    });
+  };
+  
+  // Remove an item from the items array
+  const removeItem = (index: number) => {
+    const updatedItems = [...invoice.items];
+    updatedItems.splice(index, 1);
+    
+    setInvoice({
+      ...invoice,
+      items: updatedItems,
+    });
+  };
+  
+  // Update customer information
+  const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setInvoice({
+      ...invoice,
+      customer: {
+        ...invoice.customer,
+        [name]: value,
+      },
+    });
+  };
+  
+  // Update invoice notes
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInvoice({
+      ...invoice,
+      notes: e.target.value,
+    });
+  };
+
+  // Update invoice number
+  const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoice({
+      ...invoice,
+      invoiceNumber: e.target.value,
+    });
+  };
+  
+  // Calculate totals whenever items change
+  useEffect(() => {
+    if (invoice.items.length > 0) {
+      const { subtotal, cgstTotal, sgstTotal, grandTotal } = calculateInvoiceTotals(invoice.items);
+      setSubtotal(subtotal);
+      setCgstTotal(cgstTotal);
+      setSgstTotal(sgstTotal);
+      setGrandTotal(grandTotal);
+    } else {
+      setSubtotal(0);
+      setCgstTotal(0);
+      setSgstTotal(0);
+      setGrandTotal(0);
+    }
+  }, [invoice.items]);
+  
+  // Save the invoice
+  const saveInvoiceDraft = () => {
+    if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
+      toast.error('Please fill in customer details');
       return;
     }
-    
-    const completeInvoice: Invoice = {
+
+    if (invoice.items.length === 0) {
+      toast.error('Please add at least one item');
+      return;
+    }
+
+    const completeInvoice = {
       ...invoice,
       subtotal,
       cgstTotal,
       sgstTotal,
       grandTotal,
+      status: 'draft' as const,
+    };
+    
+    saveInvoiceMutation.mutate(completeInvoice);
+  };
+  
+  // Generate and send the invoice
+  const generateInvoice = () => {
+    if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
+      toast.error('Please fill in customer details');
+      return;
+    }
+
+    if (invoice.items.length === 0) {
+      toast.error('Please add at least one item');
+      return;
+    }
+
+    const completeInvoice = {
+      ...invoice,
+      subtotal,
+      cgstTotal,
+      sgstTotal,
+      grandTotal,
+      status: 'sent' as const,
     };
     
     saveInvoiceMutation.mutate(completeInvoice);
   };
 
-  const handleItemChange = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
-    const { name, value } = e.target;
-    
-    setInvoice(prev => {
-      const updatedItems = prev.items.map(item => {
-        if (item.id === id) {
-          // Create a copy of the item
-          const updatedItem = { ...item };
-          
-          // Handle different field types
-          if (name === 'name' || name === 'description') {
-            // String fields
-            updatedItem[name] = value;
-          } else {
-            // Number fields - ensure proper conversion to number
-            const numValue = parseFloat(value) || 0;
-            updatedItem[name] = numValue;
-            
-            // Recalculate price if weight or rate changes
-            if (name === 'weightInGrams' || name === 'ratePerGram' || name === 'makingCharges') {
-              const weight = name === 'weightInGrams' ? numValue : item.weightInGrams || 0;
-              const rate = name === 'ratePerGram' ? numValue : item.ratePerGram || 0;
-              const making = name === 'makingCharges' ? numValue : item.makingCharges || 0;
-              
-              updatedItem.price = calculatePriceByWeight(weight, rate, making);
-            }
-          }
-          
-          // Recalculate GST
-          const { cgstAmount, sgstAmount, totalAmount } = calculateGST(
-            updatedItem.price,
-            updatedItem.cgstRate,
-            updatedItem.sgstRate
-          );
-          
-          updatedItem.cgstAmount = cgstAmount;
-          updatedItem.sgstAmount = sgstAmount;
-          updatedItem.totalAmount = totalAmount;
-          
-          return updatedItem;
-        }
-        return item;
-      });
-      
-      return { ...prev, items: updatedItems };
-    });
-  };
-
-  const handleDateChange = (date: Date | undefined, field: 'date' | 'dueDate') => {
-    if (date) {
-      setInvoice(prev => ({ ...prev, [field]: date }));
-    }
-  };
-
-  const togglePreview = () => {
-    if (invoice.customer.name === '' || invoice.items.length === 0) {
-      toast.error('Please add customer details and at least one item before previewing');
-      return;
-    }
-    setShowPreview(!showPreview);
-  };
-
-  const downloadPDF = () => {
-    if (!invoiceRef.current || !showPreview) {
-      toast.error('Please preview the invoice before downloading');
-      return;
-    }
-
-    toast.info('Generating PDF...');
-    
-    const invoiceElement = invoiceRef.current;
-    
-    html2canvas(invoiceElement, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-    }).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = canvas.height * imgWidth / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`Invoice-${invoice.invoiceNumber}.pdf`);
-      
-      toast.success('PDF Downloaded Successfully');
-    }).catch(err => {
-      console.error('Error generating PDF:', err);
-      toast.error('Failed to generate PDF');
-    });
-  };
-
-  const navigateToInvoice = (direction: 'prev' | 'next') => {
-    // For now, this just navigates to the invoice history page
-    // In a real implementation, it would navigate to the previous or next invoice
-    navigate('/invoice-history');
-  };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="space-y-4">
-        {!showPreview ? (
-          <>
-            <Card>
-              <CardContent className="space-y-4 pt-4">
-                <h2 className="text-lg font-semibold">Vendor Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    placeholder="Vendor Name"
-                    value={vendorInfo.name}
-                    onChange={(e) => setVendorInfo(prev => ({ ...prev, name: e.target.value }))}
-                  />
-                  <Input
-                    placeholder="GST Number"
-                    value={vendorInfo.gstNo}
-                    onChange={(e) => setVendorInfo(prev => ({ ...prev, gstNo: e.target.value }))}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    placeholder="Phone Number"
-                    value={vendorInfo.phone}
-                    onChange={(e) => setVendorInfo(prev => ({ ...prev, phone: e.target.value }))}
-                  />
-                  <Input
-                    placeholder="Email"
-                    value={vendorInfo.email}
-                    onChange={(e) => setVendorInfo(prev => ({ ...prev, email: e.target.value }))}
-                  />
-                </div>
-                <Textarea
-                  placeholder="Address"
-                  value={vendorInfo.address}
-                  onChange={(e) => setVendorInfo(prev => ({ ...prev, address: e.target.value }))}
-                  rows={2}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Vendor Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="vendor-name">Business Name</Label>
+              <Input 
+                id="vendor-name" 
+                value="Gold Jewelry Shop" 
+                className="mt-1"
+                readOnly
+              />
+            </div>
+            <div>
+              <Label htmlFor="vendor-gst">GSTIN</Label>
+              <Input 
+                id="vendor-gst" 
+                value="27AADCG1234A1Z5" 
+                className="mt-1"
+                readOnly
+              />
+            </div>
+            <div>
+              <Label htmlFor="vendor-address">Address</Label>
+              <Input 
+                id="vendor-address" 
+                value="123 Jewelers Lane, Mumbai, Maharashtra" 
+                className="mt-1"
+                readOnly
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="customer-name">Customer Name</Label>
+              <Input 
+                id="customer-name" 
+                name="name"
+                value={invoice.customer.name}
+                onChange={handleCustomerChange}
+                className="mt-1"
+                placeholder="Enter customer name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="customer-address">Address</Label>
+              <Input 
+                id="customer-address" 
+                name="address"
+                value={invoice.customer.address}
+                onChange={handleCustomerChange}
+                className="mt-1"
+                placeholder="Enter customer address"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customer-phone">Phone</Label>
+                <Input 
+                  id="customer-phone" 
+                  name="phone"
+                  value={invoice.customer.phone}
+                  onChange={handleCustomerChange}
+                  className="mt-1"
+                  placeholder="Phone number"
                 />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="space-y-4 pt-4">
-                <h2 className="text-lg font-semibold">Invoice Details</h2>
+              </div>
+              <div>
+                <Label htmlFor="customer-gst">GSTIN (optional)</Label>
+                <Input 
+                  id="customer-gst" 
+                  name="gstNo"
+                  value={invoice.customer.gstNo}
+                  onChange={handleCustomerChange}
+                  className="mt-1"
+                  placeholder="Customer GSTIN"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Invoice Details</CardTitle>
+          <div className="flex items-center gap-4">
+            <div className="text-sm flex items-end gap-2">
+              <div>
+                <Label htmlFor="invoice-number" className="text-xs text-muted-foreground">Invoice #</Label>
                 <Input
-                  placeholder="Customer Name"
-                  value={invoice.customer.name}
-                  onChange={(e) => setInvoice(prev => ({ ...prev, customer: { ...prev.customer, name: e.target.value } }))}
-                  required
+                  id="invoice-number"
+                  value={invoice.invoiceNumber}
+                  onChange={handleInvoiceNumberChange}
+                  className="w-[120px] h-8 text-sm"
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    placeholder="Customer Address"
-                    value={invoice.customer.address}
-                    onChange={(e) => setInvoice(prev => ({ ...prev, customer: { ...prev.customer, address: e.target.value } }))}
-                  />
-                  <Input
-                    placeholder="Customer Phone"
-                    value={invoice.customer.phone}
-                    onChange={(e) => setInvoice(prev => ({ ...prev, customer: { ...prev.customer, phone: e.target.value } }))}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    placeholder="Customer Email"
-                    type="email"
-                    value={invoice.customer.email}
-                    onChange={(e) => setInvoice(prev => ({ ...prev, customer: { ...prev.customer, email: e.target.value } }))}
-                  />
-                  <Input
-                    placeholder="Customer GST Number (Optional)"
-                    value={invoice.customer.gstNo}
-                    onChange={(e) => setInvoice(prev => ({ ...prev, customer: { ...prev.customer, gstNo: e.target.value } }))}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Invoice Date</label>
-                    <DatePicker 
-                      date={invoice.date} 
-                      setDate={(date) => handleDateChange(date, 'date')} 
-                      placeholder="Select invoice date"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Due Date</label>
-                    <DatePicker 
-                      date={invoice.dueDate} 
-                      setDate={(date) => handleDateChange(date, 'dueDate')} 
-                      placeholder="Select due date"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Notes</label>
-                  <Textarea
-                    placeholder="Invoice notes"
-                    value={invoice.notes}
-                    onChange={(e) => setInvoice(prev => ({ ...prev, notes: e.target.value }))}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Payment Method</label>
-                  <Select 
-                    value={invoice.paymentMethod} 
-                    onValueChange={(value) => setInvoice(prev => ({ ...prev, paymentMethod: value }))}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="invoice-date" className="text-xs text-muted-foreground">Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className="w-[160px] pl-3 text-left font-normal mt-1"
                   >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select Payment Method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Cash">Cash</SelectItem>
-                      <SelectItem value="UPI">UPI</SelectItem>
-                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="Cash/UPI/Bank Transfer">Multiple Methods</SelectItem>
-                      <SelectItem value="Credit Card">Credit Card</SelectItem>
-                      <SelectItem value="Debit Card">Debit Card</SelectItem>
-                      <SelectItem value="Cheque">Cheque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="space-y-4 pt-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-md font-semibold">Invoice Items</h3>
-                  <Button type="button" onClick={handleAddItem} size="sm">Add Item</Button>
-                </div>
-                
-                {invoice.items.length === 0 && (
-                  <div className="text-center py-8 border border-dashed rounded-md">
-                    <p className="text-muted-foreground">No items added yet. Click "Add Item" to start.</p>
-                  </div>
-                )}
-                
-                {invoice.items.map((item, index) => (
-                  <div key={item.id} className="border p-4 rounded-md mb-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium">Item #{index + 1}</h4>
-                      <Button 
-                        type="button" 
-                        onClick={() => handleRemoveItem(item.id)} 
-                        variant="outline" 
-                        size="sm"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                      <Input
-                        name="name"
-                        value={item.name}
-                        onChange={(e) => handleItemChange(e as any, item.id)}
-                        placeholder="Item Name"
-                      />
-                      <Input
-                        name="description"
-                        value={item.description}
-                        onChange={(e) => handleItemChange(e as any, item.id)}
-                        placeholder="Item Description"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                      <Input
-                        name="weightInGrams"
-                        type="number"
-                        value={item.weightInGrams}
-                        onChange={(e) => handleItemChange(e as any, item.id)}
-                        placeholder="Weight (grams)"
-                      />
-                      <Input
-                        name="ratePerGram"
-                        type="number"
-                        value={item.ratePerGram}
-                        onChange={(e) => handleItemChange(e as any, item.id)}
-                        placeholder="Rate per gram"
-                      />
-                      <Input
-                        name="makingCharges"
-                        type="number"
-                        value={item.makingCharges}
-                        onChange={(e) => handleItemChange(e as any, item.id)}
-                        placeholder="Making Charges"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                      <div className="border rounded p-2 bg-gray-50">
-                        <label className="text-xs text-gray-500">Item Total</label>
-                        <p className="font-medium">₹{item.price.toFixed(2)}</p>
-                      </div>
-                      <div className="border rounded p-2 bg-gray-50">
-                        <label className="text-xs text-gray-500">CGST @{item.cgstRate}%</label>
-                        <p className="font-medium">₹{item.cgstAmount.toFixed(2)}</p>
-                      </div>
-                      <div className="border rounded p-2 bg-gray-50">
-                        <label className="text-xs text-gray-500">SGST @{item.sgstRate}%</label>
-                        <p className="font-medium">₹{item.sgstAmount.toFixed(2)}</p>
-                      </div>
-                      <div className="border rounded p-2 bg-blue-50">
-                        <label className="text-xs text-gray-500">Total</label>
-                        <p className="font-medium">₹{item.totalAmount.toFixed(2)}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {invoice.items.length > 0 && (
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Subtotal:</span>
-                      <span>₹{subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>CGST:</span>
-                      <span>₹{cgstTotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>SGST:</span>
-                      <span>₹{sgstTotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between font-semibold">
-                      <span>Grand Total:</span>
-                      <span>₹{grandTotal.toFixed(2)}</span>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          <Card className="p-6" ref={invoiceRef}>
-            <div className="border-b pb-4 mb-4">
-              <h1 className="text-2xl font-bold text-center">{vendorInfo.name}</h1>
-              <p className="text-center text-gray-600">{vendorInfo.address}</p>
-              <p className="text-center text-gray-600">Phone: {vendorInfo.phone} | Email: {vendorInfo.email}</p>
-              <p className="text-center text-gray-600">GST No: {vendorInfo.gstNo}</p>
+                    {invoice.date ? (
+                      format(invoice.date, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={invoice.date}
+                    onSelect={(date) => setInvoice({ ...invoice, date: date as Date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <h2 className="font-semibold">Invoice To:</h2>
-                <p>{invoice.customer.name}</p>
-                <p>{invoice.customer.address}</p>
-                <p>Phone: {invoice.customer.phone}</p>
-                {invoice.customer.gstNo && <p>GST No: {invoice.customer.gstNo}</p>}
-              </div>
-              <div className="text-right">
-                <h2 className="font-semibold">Invoice Details:</h2>
-                <p>Invoice No: {invoice.invoiceNumber}</p>
-                <p>Date: {format(invoice.date, 'dd MMM yyyy')}</p>
-                <p>Due Date: {format(invoice.dueDate, 'dd MMM yyyy')}</p>
-              </div>
-            </div>
-            
-            <table className="min-w-full border mb-6">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="border p-2 text-left">Item</th>
-                  <th className="border p-2 text-right">Weight</th>
-                  <th className="border p-2 text-right">Rate</th>
-                  <th className="border p-2 text-right">Making</th>
-                  <th className="border p-2 text-right">Amount</th>
-                  <th className="border p-2 text-right">GST</th>
-                  <th className="border p-2 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item, index) => (
-                  <tr key={index}>
-                    <td className="border p-2">
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-gray-600">{item.description}</div>
-                    </td>
-                    <td className="border p-2 text-right">{item.weightInGrams}g</td>
-                    <td className="border p-2 text-right">₹{item.ratePerGram}/g</td>
-                    <td className="border p-2 text-right">₹{item.makingCharges}</td>
-                    <td className="border p-2 text-right">₹{item.price.toFixed(2)}</td>
-                    <td className="border p-2 text-right">
-                      <div>CGST: ₹{item.cgstAmount.toFixed(2)}</div>
-                      <div>SGST: ₹{item.sgstAmount.toFixed(2)}</div>
-                    </td>
-                    <td className="border p-2 text-right font-medium">₹{item.totalAmount.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-gray-50">
-                  <td colSpan={4} className="border p-2 text-right font-medium">Subtotal</td>
-                  <td className="border p-2 text-right">₹{subtotal.toFixed(2)}</td>
-                  <td className="border p-2 text-right">
-                    <div>CGST: ₹{cgstTotal.toFixed(2)}</div>
-                    <div>SGST: ₹{sgstTotal.toFixed(2)}</div>
-                  </td>
-                  <td className="border p-2 text-right font-bold">₹{grandTotal.toFixed(2)}</td>
-                </tr>
-              </tfoot>
-            </table>
-            
-            <div className="grid grid-cols-2 gap-8 mb-8">
-              <div>
-                <h3 className="font-semibold mb-2">Payment Method</h3>
-                <p>{invoice.paymentMethod}</p>
-                {invoice.notes && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">Notes</h3>
-                    <p>{invoice.notes}</p>
-                  </>
-                )}
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">Bank Details</h3>
-                <p>Account Name: {vendorInfo.bankDetails.accountName}</p>
-                <p>Account Number: {vendorInfo.bankDetails.accountNumber}</p>
-                <p>Bank: {vendorInfo.bankDetails.bankName}</p>
-                <p>IFSC: {vendorInfo.bankDetails.ifscCode}</p>
-                <p>Branch: {vendorInfo.bankDetails.branch}</p>
-              </div>
-            </div>
-            
-            <div className="text-center text-gray-500 mt-8">
-              <p>Thank you for your business!</p>
-            </div>
-          </Card>
-        )}
-
-        <div className="flex justify-between items-center mt-8">
-          <div className="space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigateToInvoice('prev')}
-              disabled={true} // Would be enabled in a real implementation
-            >
-              <ArrowLeft className="mr-1" size={16} /> Previous
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigateToInvoice('next')}
-              disabled={true} // Would be enabled in a real implementation
-            >
-              Next <ArrowRight className="ml-1" size={16} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <Button variant="outline" onClick={addItem} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Item
             </Button>
           </div>
           
-          <div className="space-x-2">
+          {invoice.items.length === 0 ? (
+            <div className="text-center py-8 border border-dashed rounded-lg">
+              <p className="text-muted-foreground">No items added yet. Click 'Add Item' to begin.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {invoice.items.map((item, index) => (
+                <InvoiceItem
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  updateItem={updateItem}
+                  removeItem={removeItem}
+                />
+              ))}
+            </div>
+          )}
+          
+          <div className="mt-8 border-t pt-6">
+            <div className="flex flex-col gap-2 md:w-72 ml-auto">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span>₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">CGST:</span>
+                <span>₹{cgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">SGST:</span>
+                <span>₹{sgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between font-medium border-t pt-2 mt-2">
+                <span>Total:</span>
+                <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={invoice.notes}
+              onChange={handleNotesChange}
+              placeholder="Enter additional notes or terms & conditions"
+              className="mt-1"
+              rows={3}
+            />
+          </div>
+          
+          <div className="mt-6 flex justify-end gap-4">
             <Button 
-              type="button" 
               variant="outline" 
-              onClick={togglePreview}
+              onClick={saveInvoiceDraft}
+              disabled={saveInvoiceMutation.isPending}
             >
-              <Eye className="mr-1" size={16} /> {showPreview ? 'Edit Invoice' : 'Preview Invoice'}
+              Save as Draft
             </Button>
-            
-            {showPreview && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={downloadPDF}
-              >
-                <Download className="mr-1" size={16} /> Download PDF
-              </Button>
-            )}
-            
-            <Button type="submit">
-              <Save className="mr-1" size={16} /> Save Invoice
+            <Button 
+              onClick={generateInvoice} 
+              className="bg-gold-500 hover:bg-gold-600"
+              disabled={saveInvoiceMutation.isPending}
+            >
+              Generate Invoice
             </Button>
           </div>
-        </div>
-      </div>
-    </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
+export default InvoiceForm;
