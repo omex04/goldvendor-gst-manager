@@ -75,11 +75,12 @@ const ViewInvoice = () => {
     },
   });
 
-  // Handle print functionality
+  // Handle print functionality - fixed the API usage for useReactToPrint
   const handlePrint = useReactToPrint({
-    content: () => invoiceRef.current,
     documentTitle: `Invoice-${invoice?.invoiceNumber || 'unknown'}`,
     onAfterPrint: () => toast.success('Invoice printed successfully'),
+    // Use contentRef instead of content function
+    contentRef: invoiceRef,
   });
 
   // Wrapper function to use with the button's onClick
