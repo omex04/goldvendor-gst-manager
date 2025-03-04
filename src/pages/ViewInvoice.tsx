@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -51,6 +52,7 @@ const ViewInvoice = () => {
 
   // Handle print functionality
   const handlePrint = useReactToPrint({
+    content: () => invoiceRef.current,
     documentTitle: `Invoice-${invoice?.invoiceNumber || 'unknown'}`,
     onAfterPrint: () => toast.success('Invoice printed successfully'),
   });
@@ -177,42 +179,54 @@ const ViewInvoice = () => {
             </div>
           </div>
           
-          <Card className="border-0 shadow-sm">
+          {/* Vendor information banner */}
+          <div className="bg-gold-50 dark:bg-gray-800 p-4 rounded-lg border border-gold-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gold-800 dark:text-gold-400">Vendor Information</h2>
+            <p className="text-sm text-gold-700 dark:text-gray-300">Gold Jewelry Shop | GSTIN: 27AADCG1234A1Z5 | 123 Jewelers Lane, Mumbai, Maharashtra 400001</p>
+          </div>
+          
+          <Card className="border-0 shadow-sm dark:bg-gray-800 dark:border-gray-700">
             <CardContent className="p-6" ref={invoiceRef}>
-              <div className="text-center border-b pb-4 mb-6">
-                <h2 className="text-2xl font-bold text-gold-700">Your Jewelry Shop</h2>
-                <p className="text-sm">123 Jewelry Lane, Diamond District</p>
-                <p className="text-sm">Phone: 9876543210 | Email: contact@yourjewelryshop.com</p>
-                <p className="text-sm">GST No: 27AABCD1234A1Z5</p>
+              <div className="text-center border-b pb-4 mb-6 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gold-700 dark:text-gold-400">Your Jewelry Shop</h2>
+                <p className="text-sm dark:text-gray-300">123 Jewelry Lane, Diamond District</p>
+                <p className="text-sm dark:text-gray-300">Phone: 9876543210 | Email: contact@yourjewelryshop.com</p>
+                <p className="text-sm dark:text-gray-300">GST No: 27AABCD1234A1Z5</p>
               </div>
               
-              <div className="flex flex-col md:flex-row justify-between pb-8 border-b">
+              <div className="flex flex-col md:flex-row justify-between pb-8 border-b dark:border-gray-700">
                 <div>
-                  <h2 className="text-3xl font-bold text-gold-700">INVOICE</h2>
+                  <h2 className="text-3xl font-bold text-gold-700 dark:text-gold-400">INVOICE</h2>
                   <div className="mt-1 flex items-center">
-                    <span className="text-muted-foreground mr-2">#:</span>
-                    <span className="font-medium">{invoice.invoiceNumber}</span>
+                    <span className="text-muted-foreground mr-2 dark:text-gray-400">#:</span>
+                    <span className="font-medium dark:text-gray-300">{invoice.invoiceNumber}</span>
                   </div>
                 </div>
                 
                 <div className="mt-4 md:mt-0 md:text-right">
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Date: </span>
-                    <span>{formatDate(invoice.date)}</span>
+                    <span className="text-muted-foreground dark:text-gray-400">Date: </span>
+                    <span className="dark:text-gray-300">{formatDate(invoice.date)}</span>
                   </div>
                   {invoice.dueDate && (
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Due Date: </span>
-                      <span>{formatDate(invoice.dueDate)}</span>
+                      <span className="text-muted-foreground dark:text-gray-400">Due Date: </span>
+                      <span className="dark:text-gray-300">{formatDate(invoice.dueDate)}</span>
+                    </div>
+                  )}
+                  {invoice.paymentMethod && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground dark:text-gray-400">Payment Method: </span>
+                      <span className="dark:text-gray-300">{invoice.paymentMethod}</span>
                     </div>
                   )}
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-8 border-b">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-8 border-b dark:border-gray-700">
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-3">FROM</h3>
-                  <div className="space-y-1">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-3 dark:text-gray-400">FROM</h3>
+                  <div className="space-y-1 dark:text-gray-300">
                     <p className="font-bold">Gold Jewelry Shop</p>
                     <p>123 Jewelers Lane, Mumbai, Maharashtra 400001</p>
                     <p>Phone: +91 98765 12345</p>
@@ -222,8 +236,8 @@ const ViewInvoice = () => {
                 </div>
                 
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-3">TO</h3>
-                  <div className="space-y-1">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-3 dark:text-gray-400">TO</h3>
+                  <div className="space-y-1 dark:text-gray-300">
                     <p className="font-bold">{invoice.customer.name}</p>
                     <p>{invoice.customer.address}</p>
                     <p>Phone: {invoice.customer.phone}</p>
@@ -233,40 +247,40 @@ const ViewInvoice = () => {
                 </div>
               </div>
               
-              <div className="py-8 border-b">
+              <div className="py-8 border-b dark:border-gray-700">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b">
-                      <th className="py-3 px-4 text-left font-medium">Item</th>
-                      <th className="py-3 px-4 text-left font-medium">HSN</th>
-                      <th className="py-3 px-4 text-right font-medium">Weight (g)</th>
-                      <th className="py-3 px-4 text-right font-medium">Rate/g (₹)</th>
-                      <th className="py-3 px-4 text-right font-medium">Making (₹)</th>
-                      <th className="py-3 px-4 text-right font-medium">Amount (₹)</th>
+                    <tr className="border-b dark:border-gray-700">
+                      <th className="py-3 px-4 text-left font-medium dark:text-gray-300">Item</th>
+                      <th className="py-3 px-4 text-left font-medium dark:text-gray-300">HSN</th>
+                      <th className="py-3 px-4 text-right font-medium dark:text-gray-300">Weight (g)</th>
+                      <th className="py-3 px-4 text-right font-medium dark:text-gray-300">Rate/g (₹)</th>
+                      <th className="py-3 px-4 text-right font-medium dark:text-gray-300">Making (₹)</th>
+                      <th className="py-3 px-4 text-right font-medium dark:text-gray-300">Amount (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoice.items.map((item) => (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-4 px-4">
+                      <tr key={item.id} className="border-b last:border-0 dark:border-gray-700">
+                        <td className="py-4 px-4 dark:text-gray-300">
                           <div className="font-medium">{item.name}</div>
                           {item.description && (
-                            <div className="text-xs text-muted-foreground">{item.description}</div>
+                            <div className="text-xs text-muted-foreground dark:text-gray-400">{item.description}</div>
                           )}
                         </td>
-                        <td className="py-4 px-4">{item.hsnCode}</td>
-                        <td className="py-4 px-4 text-right">{item.weightInGrams}</td>
-                        <td className="py-4 px-4 text-right">
+                        <td className="py-4 px-4 dark:text-gray-300">{item.hsnCode}</td>
+                        <td className="py-4 px-4 text-right dark:text-gray-300">{item.weightInGrams}</td>
+                        <td className="py-4 px-4 text-right dark:text-gray-300">
                           {item.ratePerGram !== undefined
                             ? item.ratePerGram.toLocaleString('en-IN')
                             : '-'}
                         </td>
-                        <td className="py-4 px-4 text-right">
+                        <td className="py-4 px-4 text-right dark:text-gray-300">
                           {item.makingCharges !== undefined
                             ? item.makingCharges.toLocaleString('en-IN')
                             : '-'}
                         </td>
-                        <td className="py-4 px-4 text-right font-medium">
+                        <td className="py-4 px-4 text-right font-medium dark:text-gray-300">
                           {item.price.toLocaleString('en-IN')}
                         </td>
                       </tr>
@@ -277,31 +291,31 @@ const ViewInvoice = () => {
               
               <div className="py-8 grid grid-cols-1 md:grid-cols-2">
                 <div>
-                  <h3 className="font-medium mb-3">Notes</h3>
-                  <p className="text-sm text-muted-foreground">{invoice.notes || 'No notes'}</p>
+                  <h3 className="font-medium mb-3 dark:text-gray-300">Notes</h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">{invoice.notes || 'No notes'}</p>
                 </div>
                 
                 <div className="mt-6 md:mt-0 md:ml-auto md:w-72">
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal:</span>
+                    <div className="flex justify-between dark:text-gray-300">
+                      <span className="text-muted-foreground dark:text-gray-400">Subtotal:</span>
                       <span>₹{invoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">CGST (1.5%):</span>
+                    <div className="flex justify-between dark:text-gray-300">
+                      <span className="text-muted-foreground dark:text-gray-400">CGST (1.5%):</span>
                       <span>₹{invoice.cgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">SGST (1.5%):</span>
+                    <div className="flex justify-between dark:text-gray-300">
+                      <span className="text-muted-foreground dark:text-gray-400">SGST (1.5%):</span>
                       <span>₹{invoice.sgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <Separator className="my-2" />
-                    <div className="flex justify-between font-bold text-lg">
+                    <Separator className="my-2 dark:bg-gray-700" />
+                    <div className="flex justify-between font-bold text-lg dark:text-gray-300">
                       <span>Total:</span>
                       <span>₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                     {invoice.paidAmount && (
-                      <div className="flex justify-between text-green-600">
+                      <div className="flex justify-between text-green-600 dark:text-green-400">
                         <span>Paid:</span>
                         <span>₹{invoice.paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>

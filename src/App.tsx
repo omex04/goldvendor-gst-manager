@@ -13,6 +13,7 @@ import ViewInvoice from "./pages/ViewInvoice";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,18 @@ const App = () => {
     // Check if user is authenticated
     const auth = localStorage.getItem('isAuthenticated');
     setIsAuthenticated(auth === 'true');
+
+    // Add event listener for storage events to detect login/logout in other tabs
+    const handleStorageChange = () => {
+      const auth = localStorage.getItem('isAuthenticated');
+      setIsAuthenticated(auth === 'true');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   return (
@@ -42,11 +55,14 @@ const App = () => {
                     <Route path="/invoice-history" element={<InvoiceHistory />} />
                     <Route path="/view-invoice/:id" element={<ViewInvoice />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/login" element={<Navigate to="/" replace />} />
+                    <Route path="/register" element={<Navigate to="/" replace />} />
                     <Route path="*" element={<NotFound />} />
                   </>
                 ) : (
                   <>
                     <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
                     <Route path="*" element={<Navigate to="/login" replace />} />
                   </>
                 )}

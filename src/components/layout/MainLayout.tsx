@@ -7,6 +7,7 @@ import { BarChart3, FileText, Home, LayoutDashboard, LogOut, Moon, Settings, Sun
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ui/theme-provider';
+import { toast } from 'sonner';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
+    toast.success('Logged out successfully');
     navigate('/login');
   };
 

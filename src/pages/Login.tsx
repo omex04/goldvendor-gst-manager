@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const Login = () => {
@@ -101,7 +101,7 @@ const Login = () => {
                 />
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-4">
               <Button 
                 type="submit" 
                 className="w-full bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700" 
@@ -109,18 +109,17 @@ const Login = () => {
               >
                 {isLoading ? 'Logging in...' : 'Log in'}
               </Button>
+              <div className="text-center w-full">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Don't have an account?{" "}
+                  <Button variant="link" className="p-0 font-normal h-auto dark:text-gold-400" asChild>
+                    <Link to="/register">Create an account</Link>
+                  </Button>
+                </p>
+              </div>
             </CardFooter>
           </form>
         </Card>
-        
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{" "}
-            <Button variant="link" className="p-0 font-normal h-auto dark:text-gold-400" onClick={() => navigate('/register')}>
-              Create an account
-            </Button>
-          </p>
-        </div>
       </div>
     </div>
   );
