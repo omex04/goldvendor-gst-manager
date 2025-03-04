@@ -7,21 +7,31 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Printer } from 'lucide-react';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { ArrowLeft, Download, Printer, Trash2 } from 'lucide-react';
 import { formatDate } from '@/utils/exportUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getInvoiceById, markInvoiceAsPaid } from '@/services/invoiceService';
+import { getInvoiceById, markInvoiceAsPaid, deleteInvoice } from '@/services/invoiceService';
 import { toast } from 'sonner';
 import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const statusColors = {
-  draft: "bg-gray-100 text-gray-800",
-  pending: "bg-yellow-100 text-yellow-800",
-  sent: "bg-yellow-100 text-yellow-800",
-  paid: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  draft: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  sent: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  paid: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  cancelled: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
 };
 
 const ViewInvoice = () => {
@@ -29,6 +39,7 @@ const ViewInvoice = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: ['invoice', id],
@@ -46,6 +57,20 @@ const ViewInvoice = () => {
     },
     onError: (error) => {
       toast.error('Failed to mark invoice as paid');
+      console.error(error);
+    },
+  });
+
+  // Mutation for deleting an invoice
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: deleteInvoice,
+    onSuccess: () => {
+      toast.success('Invoice deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      navigate('/invoice-history');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete invoice');
       console.error(error);
     },
   });
@@ -104,6 +129,12 @@ const ViewInvoice = () => {
   const handleMarkAsPaid = () => {
     if (!id) return;
     markAsPaidMutation.mutate(id);
+  };
+
+  // Handle delete invoice
+  const handleDeleteInvoice = () => {
+    if (!id) return;
+    deleteInvoiceMutation.mutate(id);
   };
 
   if (isLoading) {
@@ -169,13 +200,21 @@ const ViewInvoice = () => {
               </Button>
               {invoice.status !== 'paid' && (
                 <Button 
-                  className="bg-gold-500 hover:bg-gold-600"
+                  className="bg-gold-500 hover:bg-gold-600 text-primary-foreground"
                   onClick={handleMarkAsPaid}
                   disabled={markAsPaidMutation.isPending}
                 >
                   Mark as Paid
                 </Button>
               )}
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
             </div>
           </div>
           
@@ -327,6 +366,27 @@ const ViewInvoice = () => {
           </Card>
         </div>
       </PageTransition>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this invoice?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the invoice and all its data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteInvoice}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { saveInvoice } from '@/services/invoiceService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function InvoiceForm() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export function InvoiceForm() {
     items: [],
     notes: '',
     status: 'draft',
+    paymentMethod: 'cash',
   });
   
   const [subtotal, setSubtotal] = useState(0);
@@ -128,6 +130,14 @@ export function InvoiceForm() {
     setInvoice({
       ...invoice,
       invoiceNumber: e.target.value,
+    });
+  };
+
+  // Update payment method
+  const handlePaymentMethodChange = (value: string) => {
+    setInvoice({
+      ...invoice,
+      paymentMethod: value,
     });
   };
   
@@ -332,6 +342,71 @@ export function InvoiceForm() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="payment-method">Payment Method</Label>
+              <Select 
+                value={invoice.paymentMethod} 
+                onValueChange={handlePaymentMethodChange}
+              >
+                <SelectTrigger id="payment-method" className="w-full">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="invoice-status">Status</Label>
+              <Select 
+                value={invoice.status} 
+                onValueChange={(value) => setInvoice({ ...invoice, status: value })}
+              >
+                <SelectTrigger id="invoice-status" className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="due-date">Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="due-date"
+                    variant={"outline"}
+                    className="w-full pl-3 text-left font-normal mt-1"
+                  >
+                    {invoice.dueDate ? (
+                      format(invoice.dueDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={invoice.dueDate}
+                    onSelect={(date) => setInvoice({ ...invoice, dueDate: date as Date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
           <div className="mb-4">
             <Button variant="outline" onClick={addItem} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -400,7 +475,7 @@ export function InvoiceForm() {
             </Button>
             <Button 
               onClick={generateInvoice} 
-              className="bg-gold-500 hover:bg-gold-600"
+              className="bg-gold-500 hover:bg-gold-600 text-primary-foreground"
               disabled={saveInvoiceMutation.isPending}
             >
               Generate Invoice
