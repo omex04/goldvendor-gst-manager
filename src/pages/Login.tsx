@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { signIn, getSession } from '@/lib/supabase';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -14,11 +15,15 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if already authenticated
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (isAuthenticated) {
-      navigate('/');
-    }
+    // Check if already authenticated with Supabase
+    const checkAuth = async () => {
+      const session = await getSession();
+      if (session) {
+        navigate('/');
+      }
+    };
+    
+    checkAuth();
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,22 +37,17 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // In a real app with Supabase, you would use:
-      // const { error } = await supabase.auth.signInWithPassword({
-      //   email,
-      //   password,
-      // });
+      const { success, error } = await signIn(email, password);
       
-      // For now, simulate a successful login with any credentials
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Store authentication state
-      localStorage.setItem('isAuthenticated', 'true');
-      
-      toast.success('Login successful');
-      navigate('/');
-    } catch (error) {
-      toast.error('Login failed. Please check your credentials.');
+      if (success) {
+        toast.success('Login successful');
+        // We don't need to set localStorage as Supabase manages the session
+        navigate('/');
+      } else {
+        toast.error(error || 'Login failed. Please check your credentials.');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed. Please try again later.');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);

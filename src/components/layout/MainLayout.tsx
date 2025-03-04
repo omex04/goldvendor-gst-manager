@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ui/theme-provider';
 import { toast } from 'sonner';
+import { signOut, getCurrentUser } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -17,6 +19,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const [userName, setUserName] = useState('User');
+  const [userEmail, setUserEmail] = useState('user@example.com');
+  const [userInitials, setUserInitials] = useState('U');
   
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -25,10 +30,35 @@ export function MainLayout({ children }: MainLayoutProps) {
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    toast.success('Logged out successfully');
-    navigate('/login');
+  useEffect(() => {
+    // Fetch current user data from Supabase
+    const fetchUserData = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        const name = user.user_metadata?.name || 'User';
+        setUserName(name);
+        setUserEmail(user.email || 'user@example.com');
+        setUserInitials(name.substring(0, 2).toUpperCase());
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const { success, error } = await signOut();
+      
+      if (success) {
+        toast.success('Logged out successfully');
+        navigate('/login');
+      } else {
+        toast.error(error || 'Logout failed');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Logout failed');
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -68,11 +98,11 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center gap-3">
               <Avatar>
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-secondary text-secondary-foreground dark:bg-gray-700 dark:text-gray-300">GV</AvatarFallback>
+                <AvatarFallback className="bg-secondary text-secondary-foreground dark:bg-gray-700 dark:text-gray-300">{userInitials}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="text-sm font-medium dark:text-white">Gold Vendor</p>
-                <p className="text-xs text-muted-foreground dark:text-gray-400">vendor@example.com</p>
+                <p className="text-sm font-medium dark:text-white">{userName}</p>
+                <p className="text-xs text-muted-foreground dark:text-gray-400">{userEmail}</p>
               </div>
               <Button variant="ghost" size="icon" className="ml-auto" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
@@ -93,7 +123,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               variant="outline" 
               size="icon" 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="ml-auto mr-2"
+              className="ml-auto mr-2 dark:border-gray-700 dark:text-gray-200"
             >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>

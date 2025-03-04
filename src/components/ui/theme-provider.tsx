@@ -43,11 +43,36 @@ export function ThemeProvider({
         : "light";
 
       root.classList.add(systemTheme);
+      
+      // Apply additional global dark mode styles
+      if (systemTheme === "dark") {
+        applyDarkModeStyles();
+      } else {
+        removeDarkModeStyles();
+      }
       return;
     }
 
     root.classList.add(theme);
+    
+    // Apply additional global dark mode styles
+    if (theme === "dark") {
+      applyDarkModeStyles();
+    } else {
+      removeDarkModeStyles();
+    }
   }, [theme]);
+
+  // Helper functions to apply additional global dark mode styles
+  const applyDarkModeStyles = () => {
+    document.body.style.backgroundColor = "#111827"; // bg-gray-900
+    document.body.style.color = "#f9fafb"; // text-gray-50
+  };
+
+  const removeDarkModeStyles = () => {
+    document.body.style.backgroundColor = "";
+    document.body.style.color = "";
+  };
 
   const value = {
     theme,

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { signUp, getSession } from '@/lib/supabase';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -16,11 +17,15 @@ const Register = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if already authenticated
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (isAuthenticated) {
-      navigate('/');
-    }
+    // Check if already authenticated with Supabase
+    const checkAuth = async () => {
+      const session = await getSession();
+      if (session) {
+        navigate('/');
+      }
+    };
+    
+    checkAuth();
   }, [navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -35,28 +40,25 @@ const Register = () => {
       toast.error('Passwords do not match');
       return;
     }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
     
     setIsLoading(true);
     
     try {
-      // In a real app with Supabase, you would use:
-      // const { error } = await supabase.auth.signUp({
-      //   email,
-      //   password,
-      //   options: {
-      //     data: {
-      //       name,
-      //     }
-      //   }
-      // });
+      const { success, error } = await signUp(email, password, { name });
       
-      // For now, simulate a successful registration with any credentials
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Registration successful! Please log in.');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      if (success) {
+        toast.success('Registration successful! Check your email to confirm your account.');
+        navigate('/login');
+      } else {
+        toast.error(error || 'Registration failed. Please try again.');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Registration failed. Please try again later.');
       console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
