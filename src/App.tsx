@@ -30,13 +30,13 @@ function App() {
   }, []);
 
   const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-    const { isLoggedIn } = useAuth();
-    return isLoggedIn ? <Navigate to="/dashboard" /> : children;
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? <Navigate to="/dashboard" /> : children;
   };
 
   const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-    const { isLoggedIn } = useAuth();
-    return isLoggedIn ? children : <Navigate to="/login" />;
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? children : <Navigate to="/login" />;
   };
 
   if (isConnected === null) {
