@@ -15,6 +15,7 @@ import { Toaster } from 'sonner';
 import { checkSupabaseConnection } from './lib/supabase';
 import { Code } from './components/ui/code';
 import { SettingsProvider } from './context/SettingsContext';
+import { ThemeProvider } from './components/ui/theme-provider';
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -73,78 +74,80 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <SettingsProvider>
-        <QueryClientProvider client={queryClient}>
-          <Router>
-            <Routes>
-              <Route
-                path="/login"
-                element={
-                  <AuthRoute>
-                    <Login />
-                  </AuthRoute>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <AuthRoute>
-                    <Register />
-                  </AuthRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <PrivateRoute>
-                    <MainLayout>
-                      <Dashboard />
-                    </MainLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/invoice-history"
-                element={
-                  <PrivateRoute>
-                    <MainLayout>
-                      <InvoiceHistory />
-                    </MainLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/create-invoice"
-                element={
-                  <PrivateRoute>
-                    <CreateInvoice />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/view-invoice/:id"
-                element={
-                  <PrivateRoute>
-                    <ViewInvoice />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <PrivateRoute>
-                    <Settings />
-                  </PrivateRoute>
-                }
-              />
-              <Route path="/" element={<Navigate to="/dashboard" />} />
-            </Routes>
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </SettingsProvider>
-    </AuthProvider>
+    <ThemeProvider defaultTheme="light">
+      <AuthProvider>
+        <SettingsProvider>
+          <QueryClientProvider client={queryClient}>
+            <Router>
+              <Routes>
+                <Route
+                  path="/login"
+                  element={
+                    <AuthRoute>
+                      <Login />
+                    </AuthRoute>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <AuthRoute>
+                      <Register />
+                    </AuthRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <Dashboard />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/invoice-history"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <InvoiceHistory />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/create-invoice"
+                  element={
+                    <PrivateRoute>
+                      <CreateInvoice />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/view-invoice/:id"
+                  element={
+                    <PrivateRoute>
+                      <ViewInvoice />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <PrivateRoute>
+                      <Settings />
+                    </PrivateRoute>
+                  }
+                />
+                <Route path="/" element={<Navigate to="/dashboard" />} />
+              </Routes>
+            </Router>
+            <Toaster />
+          </QueryClientProvider>
+        </SettingsProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
