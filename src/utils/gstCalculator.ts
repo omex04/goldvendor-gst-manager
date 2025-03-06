@@ -1,4 +1,6 @@
 
+import { useSettings } from '@/context/SettingsContext';
+
 /**
  * Calculates GST amounts for a given price
  * @param price - The base price before GST
@@ -45,10 +47,25 @@ export const calculateInvoiceTotals = (items: any[]) => {
 };
 
 /**
+ * Hook to get current GST rates from settings
+ * @returns Object with current GST rates from settings
+ */
+export const useGoldGSTRates = () => {
+  const { settings } = useSettings();
+  
+  return {
+    cgst: settings.gst.cgstRate,
+    sgst: settings.gst.sgstRate,
+  };
+};
+
+/**
  * Get standard GST rates for gold products
+ * For backward compatibility
  * @returns Object with standard rates for gold products
  */
 export const getGoldGSTRates = () => {
+  // Default values if settings are not available
   return {
     cgst: 1.5, // 1.5% CGST for gold
     sgst: 1.5, // 1.5% SGST for gold

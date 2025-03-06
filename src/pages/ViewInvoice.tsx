@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useSettings } from '@/context/SettingsContext';
 
 const statusColors = {
   draft: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
@@ -40,6 +41,7 @@ const ViewInvoice = () => {
   const queryClient = useQueryClient();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const { settings } = useSettings();
   
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: ['invoice', id],
@@ -143,7 +145,7 @@ const ViewInvoice = () => {
       <MainLayout>
         <PageTransition>
           <div className="flex justify-center items-center h-64">
-            <p>Loading invoice...</p>
+            <p className="dark:text-gray-400">Loading invoice...</p>
           </div>
         </PageTransition>
       </MainLayout>
@@ -156,8 +158,8 @@ const ViewInvoice = () => {
         <PageTransition>
           <div className="space-y-6">
             <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-muted-foreground mb-4">Failed to load invoice</p>
-              <Button variant="outline" asChild>
+              <p className="text-muted-foreground mb-4 dark:text-gray-400">Failed to load invoice</p>
+              <Button variant="outline" asChild className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <Link to="/invoice-history">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Invoices
@@ -176,12 +178,12 @@ const ViewInvoice = () => {
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" asChild>
+              <Button variant="outline" size="icon" asChild className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <Link to="/invoice-history">
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              <h1 className="text-2xl font-bold tracking-tight">Invoice #{invoice.invoiceNumber}</h1>
+              <h1 className="text-2xl font-bold tracking-tight dark:text-white">Invoice #{invoice.invoiceNumber}</h1>
               <Badge 
                 variant="outline" 
                 className={`${statusColors[invoice.status as keyof typeof statusColors]} border-none font-normal capitalize`}
@@ -191,17 +193,27 @@ const ViewInvoice = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={printInvoice}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={printInvoice} 
+                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
                 <Printer className="h-4 w-4 mr-2" />
                 Print
               </Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDownloadPDF}
+                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
               {invoice.status !== 'paid' && (
                 <Button 
-                  className="bg-gold-500 hover:bg-gold-600 text-primary-foreground"
+                  className="bg-gold-500 hover:bg-gold-600 text-primary-foreground dark:bg-gold-600 dark:hover:bg-gold-700"
                   onClick={handleMarkAsPaid}
                   disabled={markAsPaidMutation.isPending}
                 >
@@ -222,16 +234,19 @@ const ViewInvoice = () => {
           {/* Vendor information banner */}
           <div className="bg-gold-50 dark:bg-gray-800 p-4 rounded-lg border border-gold-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gold-800 dark:text-gold-400">Vendor Information</h2>
-            <p className="text-sm text-gold-700 dark:text-gray-300">Gold Jewelry Shop | GSTIN: 27AADCG1234A1Z5 | 123 Jewelers Lane, Mumbai, Maharashtra 400001</p>
+            <p className="text-sm text-gold-700 dark:text-gray-300">
+              {settings.vendor.name} | GSTIN: {settings.vendor.gstNo} | {settings.vendor.address}
+            </p>
           </div>
           
           <Card className="border-0 shadow-sm dark:bg-gray-800 dark:border-gray-700">
             <CardContent className="p-6" ref={invoiceRef}>
               <div className="text-center border-b pb-4 mb-6 dark:border-gray-700">
-                <h2 className="text-2xl font-bold text-gold-700 dark:text-gold-400">Your Jewelry Shop</h2>
-                <p className="text-sm dark:text-gray-300">123 Jewelry Lane, Diamond District</p>
-                <p className="text-sm dark:text-gray-300">Phone: 9876543210 | Email: contact@yourjewelryshop.com</p>
-                <p className="text-sm dark:text-gray-300">GST No: 27AABCD1234A1Z5</p>
+                <h2 className="text-2xl font-bold text-gold-700 dark:text-gold-400">{settings.vendor.name}</h2>
+                <p className="text-sm dark:text-gray-300">{settings.vendor.address}</p>
+                <p className="text-sm dark:text-gray-300">Phone: {settings.vendor.phone} | Email: {settings.vendor.email}</p>
+                <p className="text-sm dark:text-gray-300">GST No: {settings.vendor.gstNo}</p>
+                {settings.vendor.panNo && <p className="text-sm dark:text-gray-300">PAN: {settings.vendor.panNo}</p>}
               </div>
               
               <div className="flex flex-col md:flex-row justify-between pb-8 border-b dark:border-gray-700">
@@ -267,11 +282,12 @@ const ViewInvoice = () => {
                 <div>
                   <h3 className="font-medium text-sm text-muted-foreground mb-3 dark:text-gray-400">FROM</h3>
                   <div className="space-y-1 dark:text-gray-300">
-                    <p className="font-bold">Gold Jewelry Shop</p>
-                    <p>123 Jewelers Lane, Mumbai, Maharashtra 400001</p>
-                    <p>Phone: +91 98765 12345</p>
-                    <p>Email: contact@goldjewelry.com</p>
-                    <p>GSTIN: 27AADCG1234A1Z5</p>
+                    <p className="font-bold">{settings.vendor.name}</p>
+                    <p>{settings.vendor.address}</p>
+                    <p>Phone: {settings.vendor.phone}</p>
+                    <p>Email: {settings.vendor.email}</p>
+                    <p>GSTIN: {settings.vendor.gstNo}</p>
+                    {settings.vendor.panNo && <p>PAN: {settings.vendor.panNo}</p>}
                   </div>
                 </div>
                 
@@ -333,6 +349,19 @@ const ViewInvoice = () => {
                 <div>
                   <h3 className="font-medium mb-3 dark:text-gray-300">Notes</h3>
                   <p className="text-sm text-muted-foreground dark:text-gray-400">{invoice.notes || 'No notes'}</p>
+                  
+                  {settings.bank.accountNumber && (
+                    <div className="mt-6">
+                      <h3 className="font-medium mb-3 dark:text-gray-300">Bank Details</h3>
+                      <div className="text-sm dark:text-gray-400">
+                        <p>Account Name: {settings.bank.accountName}</p>
+                        <p>Account Number: {settings.bank.accountNumber}</p>
+                        <p>Bank: {settings.bank.bankName}</p>
+                        <p>IFSC: {settings.bank.ifscCode}</p>
+                        <p>Branch: {settings.bank.branch}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-6 md:mt-0 md:ml-auto md:w-72">
@@ -342,11 +371,11 @@ const ViewInvoice = () => {
                       <span>₹{invoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between dark:text-gray-300">
-                      <span className="text-muted-foreground dark:text-gray-400">CGST (1.5%):</span>
+                      <span className="text-muted-foreground dark:text-gray-400">CGST ({settings.gst.cgstRate}%):</span>
                       <span>₹{invoice.cgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between dark:text-gray-300">
-                      <span className="text-muted-foreground dark:text-gray-400">SGST (1.5%):</span>
+                      <span className="text-muted-foreground dark:text-gray-400">SGST ({settings.gst.sgstRate}%):</span>
                       <span>₹{invoice.sgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <Separator className="my-2 dark:bg-gray-700" />
@@ -370,15 +399,15 @@ const ViewInvoice = () => {
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="dark:bg-gray-800 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this invoice?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="dark:text-white">Are you sure you want to delete this invoice?</AlertDialogTitle>
+            <AlertDialogDescription className="dark:text-gray-400">
               This action cannot be undone. This will permanently delete the invoice and all its data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteInvoice}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

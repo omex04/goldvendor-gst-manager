@@ -10,16 +10,20 @@ import { CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { InvoiceItem } from './InvoiceItem';
-import { calculateInvoiceTotals, getGoldGSTRates } from '@/utils/gstCalculator';
+import { calculateInvoiceTotals, useGoldGSTRates } from '@/utils/gstCalculator';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { saveInvoice } from '@/services/invoiceService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSettings } from '@/context/SettingsContext';
 
 export function InvoiceForm() {
   const navigate = useNavigate();
+  const { settings, isLoading: settingsLoading } = useSettings();
+  const goldRates = useGoldGSTRates();
+  
   const [invoice, setInvoice] = useState({
     id: uuidv4(),
     invoiceNumber: `INV-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
@@ -43,8 +47,6 @@ export function InvoiceForm() {
   const [cgstTotal, setCgstTotal] = useState(0);
   const [sgstTotal, setSgstTotal] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
-  
-  const goldRates = getGoldGSTRates();
   
   // Save invoice mutation
   const saveInvoiceMutation = useMutation({
@@ -157,6 +159,48 @@ export function InvoiceForm() {
     }
   }, [invoice.items]);
   
+  // Auto-save draft if enabled in preferences
+  useEffect(() => {
+    const autoSaveDraft = async () => {
+      // Only auto-save if:
+      // 1. Auto-save is enabled in preferences
+      // 2. We have customer information
+      // 3. We have at least one item
+      // 4. We're not currently saving
+      if (
+        settings.preferences.autoSave &&
+        invoice.customer.name &&
+        invoice.customer.address &&
+        invoice.customer.phone &&
+        invoice.items.length > 0 &&
+        !saveInvoiceMutation.isPending
+      ) {
+        const completeInvoice = {
+          ...invoice,
+          subtotal,
+          cgstTotal,
+          sgstTotal,
+          grandTotal,
+          status: 'draft' as const,
+        };
+        
+        try {
+          await saveInvoice(completeInvoice);
+          console.log('Auto-saved invoice draft');
+        } catch (error) {
+          console.error('Failed to auto-save invoice:', error);
+        }
+      }
+    };
+    
+    // Set up timer for auto-save (every 2 minutes)
+    const autoSaveTimer = setInterval(autoSaveDraft, 120000);
+    
+    return () => {
+      clearInterval(autoSaveTimer);
+    };
+  }, [invoice, subtotal, cgstTotal, sgstTotal, grandTotal, settings.preferences.autoSave, saveInvoiceMutation.isPending]);
+  
   // Save the invoice
   const saveInvoiceDraft = () => {
     if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
@@ -208,88 +252,88 @@ export function InvoiceForm() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="text-lg">Vendor Information</CardTitle>
+            <CardTitle className="text-lg dark:text-white">Vendor Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="vendor-name">Business Name</Label>
+              <Label htmlFor="vendor-name" className="dark:text-gray-300">Business Name</Label>
               <Input 
                 id="vendor-name" 
-                value="Gold Jewelry Shop" 
-                className="mt-1"
+                value={settings.vendor.name} 
+                className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 readOnly
               />
             </div>
             <div>
-              <Label htmlFor="vendor-gst">GSTIN</Label>
+              <Label htmlFor="vendor-gst" className="dark:text-gray-300">GSTIN</Label>
               <Input 
                 id="vendor-gst" 
-                value="27AADCG1234A1Z5" 
-                className="mt-1"
+                value={settings.vendor.gstNo} 
+                className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 readOnly
               />
             </div>
             <div>
-              <Label htmlFor="vendor-address">Address</Label>
+              <Label htmlFor="vendor-address" className="dark:text-gray-300">Address</Label>
               <Input 
                 id="vendor-address" 
-                value="123 Jewelers Lane, Mumbai, Maharashtra" 
-                className="mt-1"
+                value={settings.vendor.address} 
+                className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 readOnly
               />
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="text-lg">Customer Information</CardTitle>
+            <CardTitle className="text-lg dark:text-white">Customer Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="customer-name">Customer Name</Label>
+              <Label htmlFor="customer-name" className="dark:text-gray-300">Customer Name</Label>
               <Input 
                 id="customer-name" 
                 name="name"
                 value={invoice.customer.name}
                 onChange={handleCustomerChange}
-                className="mt-1"
+                className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="Enter customer name"
               />
             </div>
             <div>
-              <Label htmlFor="customer-address">Address</Label>
+              <Label htmlFor="customer-address" className="dark:text-gray-300">Address</Label>
               <Input 
                 id="customer-address" 
                 name="address"
                 value={invoice.customer.address}
                 onChange={handleCustomerChange}
-                className="mt-1"
+                className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="Enter customer address"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="customer-phone">Phone</Label>
+                <Label htmlFor="customer-phone" className="dark:text-gray-300">Phone</Label>
                 <Input 
                   id="customer-phone" 
                   name="phone"
                   value={invoice.customer.phone}
                   onChange={handleCustomerChange}
-                  className="mt-1"
+                  className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="Phone number"
                 />
               </div>
               <div>
-                <Label htmlFor="customer-gst">GSTIN (optional)</Label>
+                <Label htmlFor="customer-gst" className="dark:text-gray-300">GSTIN (optional)</Label>
                 <Input 
                   id="customer-gst" 
                   name="gstNo"
                   value={invoice.customer.gstNo}
                   onChange={handleCustomerChange}
-                  className="mt-1"
+                  className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="Customer GSTIN"
                 />
               </div>
@@ -298,28 +342,28 @@ export function InvoiceForm() {
         </Card>
       </div>
       
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Invoice Details</CardTitle>
+          <CardTitle className="text-lg dark:text-white">Invoice Details</CardTitle>
           <div className="flex items-center gap-4">
             <div className="text-sm flex items-end gap-2">
               <div>
-                <Label htmlFor="invoice-number" className="text-xs text-muted-foreground">Invoice #</Label>
+                <Label htmlFor="invoice-number" className="text-xs text-muted-foreground dark:text-gray-400">Invoice #</Label>
                 <Input
                   id="invoice-number"
                   value={invoice.invoiceNumber}
                   onChange={handleInvoiceNumberChange}
-                  className="w-[120px] h-8 text-sm"
+                  className="w-[120px] h-8 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="invoice-date" className="text-xs text-muted-foreground">Date</Label>
+              <Label htmlFor="invoice-date" className="text-xs text-muted-foreground dark:text-gray-400">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
-                    className="w-[160px] pl-3 text-left font-normal mt-1"
+                    className="w-[160px] pl-3 text-left font-normal mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   >
                     {invoice.date ? (
                       format(invoice.date, "PPP")
@@ -329,12 +373,13 @@ export function InvoiceForm() {
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700" align="start">
                   <Calendar
                     mode="single"
                     selected={invoice.date}
                     onSelect={(date) => setInvoice({ ...invoice, date: date as Date })}
                     initialFocus
+                    className="dark:bg-gray-800"
                   />
                 </PopoverContent>
               </Popover>
@@ -344,15 +389,15 @@ export function InvoiceForm() {
         <CardContent>
           <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="payment-method">Payment Method</Label>
+              <Label htmlFor="payment-method" className="dark:text-gray-300">Payment Method</Label>
               <Select 
                 value={invoice.paymentMethod} 
                 onValueChange={handlePaymentMethodChange}
               >
-                <SelectTrigger id="payment-method" className="w-full">
+                <SelectTrigger id="payment-method" className="w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                   <SelectItem value="cash">Cash</SelectItem>
                   <SelectItem value="card">Card</SelectItem>
                   <SelectItem value="upi">UPI</SelectItem>
@@ -362,15 +407,15 @@ export function InvoiceForm() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="invoice-status">Status</Label>
+              <Label htmlFor="invoice-status" className="dark:text-gray-300">Status</Label>
               <Select 
                 value={invoice.status} 
                 onValueChange={(value) => setInvoice({ ...invoice, status: value })}
               >
-                <SelectTrigger id="invoice-status" className="w-full">
+                <SelectTrigger id="invoice-status" className="w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="sent">Sent</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
@@ -379,13 +424,13 @@ export function InvoiceForm() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="due-date">Due Date</Label>
+              <Label htmlFor="due-date" className="dark:text-gray-300">Due Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     id="due-date"
                     variant={"outline"}
-                    className="w-full pl-3 text-left font-normal mt-1"
+                    className="w-full pl-3 text-left font-normal mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   >
                     {invoice.dueDate ? (
                       format(invoice.dueDate, "PPP")
@@ -395,12 +440,13 @@ export function InvoiceForm() {
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700" align="start">
                   <Calendar
                     mode="single"
                     selected={invoice.dueDate}
                     onSelect={(date) => setInvoice({ ...invoice, dueDate: date as Date })}
                     initialFocus
+                    className="dark:bg-gray-800"
                   />
                 </PopoverContent>
               </Popover>
@@ -408,14 +454,14 @@ export function InvoiceForm() {
           </div>
 
           <div className="mb-4">
-            <Button variant="outline" onClick={addItem} className="flex items-center gap-2">
+            <Button variant="outline" onClick={addItem} className="flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
               <Plus className="h-4 w-4" />
               Add Item
             </Button>
           </div>
           
           {invoice.items.length === 0 ? (
-            <div className="text-center py-8 border border-dashed rounded-lg">
+            <div className="text-center py-8 border border-dashed rounded-lg dark:border-gray-700 dark:text-gray-400">
               <p className="text-muted-foreground">No items added yet. Click 'Add Item' to begin.</p>
             </div>
           ) : (
@@ -432,35 +478,35 @@ export function InvoiceForm() {
             </div>
           )}
           
-          <div className="mt-8 border-t pt-6">
+          <div className="mt-8 border-t pt-6 dark:border-gray-700">
             <div className="flex flex-col gap-2 md:w-72 ml-auto">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal:</span>
-                <span>₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="text-muted-foreground dark:text-gray-400">Subtotal:</span>
+                <span className="dark:text-white">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">CGST:</span>
-                <span>₹{cgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="text-muted-foreground dark:text-gray-400">CGST:</span>
+                <span className="dark:text-white">₹{cgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">SGST:</span>
-                <span>₹{sgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="text-muted-foreground dark:text-gray-400">SGST:</span>
+                <span className="dark:text-white">₹{sgstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex justify-between font-medium border-t pt-2 mt-2">
-                <span>Total:</span>
-                <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <div className="flex justify-between font-medium border-t pt-2 mt-2 dark:border-gray-700">
+                <span className="dark:text-white">Total:</span>
+                <span className="dark:text-white">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
           
           <div className="mt-6">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes" className="dark:text-gray-300">Notes</Label>
             <Textarea
               id="notes"
               value={invoice.notes}
               onChange={handleNotesChange}
               placeholder="Enter additional notes or terms & conditions"
-              className="mt-1"
+              className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               rows={3}
             />
           </div>
@@ -470,12 +516,13 @@ export function InvoiceForm() {
               variant="outline" 
               onClick={saveInvoiceDraft}
               disabled={saveInvoiceMutation.isPending}
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600"
             >
               Save as Draft
             </Button>
             <Button 
               onClick={generateInvoice} 
-              className="bg-gold-500 hover:bg-gold-600 text-primary-foreground"
+              className="bg-gold-500 hover:bg-gold-600 text-primary-foreground dark:bg-gold-600 dark:hover:bg-gold-700"
               disabled={saveInvoiceMutation.isPending}
             >
               Generate Invoice
