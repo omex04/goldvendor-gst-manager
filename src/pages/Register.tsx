@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { signUp, getSession } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -15,18 +15,14 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { register, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Check if already authenticated with Supabase
-    const checkAuth = async () => {
-      const session = await getSession();
-      if (session) {
-        navigate('/');
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,13 +45,13 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const { success, error } = await signUp(email, password, { name });
+      const success = await register(name, email, password);
       
       if (success) {
-        toast.success('Registration successful! Check your email to confirm your account.');
+        toast.success('Registration successful! You can now log in.');
         navigate('/login');
       } else {
-        toast.error(error || 'Registration failed. Please try again.');
+        toast.error('Registration failed. Please try again.');
       }
     } catch (error: any) {
       toast.error(error.message || 'Registration failed. Please try again later.');
