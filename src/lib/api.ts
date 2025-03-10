@@ -3,8 +3,8 @@ import { toast } from 'sonner';
 
 // Base API URL - will be different in development vs production
 const API_URL = import.meta.env.DEV 
-  ? 'http://localhost:3001/api' 
-  : '/api';
+  ? 'http://localhost/api' // Update this to match your local PHP development server
+  : '/api'; // This will work when deployed to Hostinger
 
 // Helper function for making API requests
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
@@ -35,7 +35,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
     
     // Handle non-2xx responses
     if (!response.ok) {
-      const error = isJson && data.message ? data.message : 'An error occurred';
+      const error = isJson && data.message ? data.message : data.error || 'An error occurred';
       throw new Error(error);
     }
     
@@ -66,7 +66,7 @@ export const api = {
         localStorage.setItem('token', data.token);
       }
       
-      return data;
+      return data.user;
     },
     
     register: async (name: string, email: string, password: string) => {
@@ -74,11 +74,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
       });
-      
-      // Save token to localStorage
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-      }
       
       return data;
     },

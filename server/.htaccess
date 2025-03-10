@@ -1,0 +1,29 @@
+
+RewriteEngine On
+
+# Handle requests to API endpoints
+RewriteRule ^api/auth/login$ api/auth/login.php [L]
+RewriteRule ^api/auth/register$ api/auth/register.php [L]
+RewriteRule ^api/auth/me$ api/auth/me.php [L]
+RewriteRule ^api/auth/logout$ api/auth/logout.php [L]
+
+# Invoices
+RewriteRule ^api/invoices$ api/invoices/index.php [L]
+RewriteRule ^api/invoices/([0-9]+)$ api/invoices/get.php?id=$1 [L]
+RewriteRule ^api/invoices/([0-9]+)/mark-paid$ api/invoices/mark-paid.php?id=$1 [L]
+RewriteRule ^api/invoices/([0-9]+)$ api/invoices/delete.php?id=$1 [L,R]
+
+# Customers
+RewriteRule ^api/customers$ api/customers/index.php [L]
+RewriteRule ^api/customers/([0-9]+)$ api/customers/get.php?id=$1 [L,R=GET]
+RewriteRule ^api/customers/([0-9]+)$ api/customers/update.php?id=$1 [L,R=PUT]
+RewriteRule ^api/customers/([0-9]+)$ api/customers/delete.php?id=$1 [L,R=DELETE]
+
+# Settings
+RewriteRule ^api/settings$ api/settings/index.php [L]
+RewriteRule ^api/settings/([a-zA-Z]+)$ api/settings/update.php?section=$1 [L]
+
+# For all other requests, serve the index.html file
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.html [QSA,L]
