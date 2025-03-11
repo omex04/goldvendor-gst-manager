@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { localDB, TABLES } from '@/lib/localStorage';
@@ -97,8 +96,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return;
         }
         
-        // Get settings from localStorage
-        const settingsData = localDB.selectSingle(TABLES.SETTINGS, { column: 'user_id', value: currentUser.id });
+        // Get settings from localStorage with proper type assertion
+        const settingsData = localDB.selectSingle(TABLES.SETTINGS, { column: 'user_id', value: currentUser.id }) as DBSettings | null;
           
         if (settingsData) {
           setSettings(settingsData.settings);

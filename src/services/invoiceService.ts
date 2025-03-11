@@ -2,19 +2,67 @@
 import { Invoice, InvoiceItem, Customer } from '@/types';
 import { localDB, TABLES } from '@/lib/localStorage';
 
+interface LocalStorageInvoice {
+  id: string;
+  invoice_number: string;
+  date: string;
+  due_date: string | null;
+  customer_id: string;
+  subtotal: number;
+  cgst_total: number;
+  sgst_total: number;
+  grand_total: number;
+  notes: string | null;
+  status: "draft" | "sent" | "paid" | "cancelled";
+  paid_amount: number | null;
+  paid_date: string | null;
+  payment_method: string | null;
+}
+
+interface LocalStorageCustomer {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string | null;
+  gst_no: string | null;
+}
+
+interface LocalStorageInvoiceItem {
+  id: string;
+  invoice_id: string;
+  name: string;
+  description: string | null;
+  hsn_code: string;
+  quantity: number;
+  weight_in_grams: number | null;
+  rate_per_gram: number | null;
+  price: number;
+  making_charges: number | null;
+  cgst_rate: number;
+  sgst_rate: number;
+  cgst_amount: number;
+  sgst_amount: number;
+  total_amount: number;
+}
+
 export async function fetchInvoices(): Promise<Invoice[]> {
   try {
-    // Get all invoices from local storage
-    const invoicesData = localDB.select(TABLES.INVOICES);
+    // Get all invoices from local storage with proper type assertion
+    const invoicesData = localDB.select(TABLES.INVOICES) as LocalStorageInvoice[];
     
-    // Get all customers and invoice items
-    const customersData = localDB.select(TABLES.CUSTOMERS);
-    const itemsData = localDB.select(TABLES.INVOICE_ITEMS);
+    // Get all customers and invoice items with proper type assertions
+    const customersData = localDB.select(TABLES.CUSTOMERS) as LocalStorageCustomer[];
+    const itemsData = localDB.select(TABLES.INVOICE_ITEMS) as LocalStorageInvoiceItem[];
     
     // Map the data to our Invoice type
-    const invoices: Invoice[] = invoicesData.map((invoice: any) => {
-      const customer = customersData.find((c: any) => c.id === invoice.customer_id);
-      const items = itemsData.filter((item: any) => item.invoice_id === invoice.id);
+    const invoices: Invoice[] = invoicesData.map((invoice) => {
+      const customer = customersData.find(c => c.id === invoice.customer_id);
+      const items = itemsData.filter(item => item.invoice_id === invoice.id);
+      
+      if (!customer) {
+        throw new Error(`Customer not found for invoice ${invoice.id}`);
+      }
       
       return {
         id: invoice.id,
@@ -22,14 +70,14 @@ export async function fetchInvoices(): Promise<Invoice[]> {
         date: new Date(invoice.date),
         dueDate: invoice.due_date ? new Date(invoice.due_date) : undefined,
         customer: {
-          id: customer?.id || '',
-          name: customer?.name || '',
-          address: customer?.address || '',
-          phone: customer?.phone || '',
-          email: customer?.email || '',
-          gstNo: customer?.gst_no || '',
+          id: customer.id,
+          name: customer.name,
+          address: customer.address,
+          phone: customer.phone,
+          email: customer.email || '',
+          gstNo: customer.gst_no || '',
         },
-        items: items.map((item: any) => ({
+        items: items.map((item) => ({
           id: item.id,
           name: item.name,
           description: item.description || undefined,
@@ -50,7 +98,7 @@ export async function fetchInvoices(): Promise<Invoice[]> {
         sgstTotal: invoice.sgst_total,
         grandTotal: invoice.grand_total,
         notes: invoice.notes || undefined,
-        status: invoice.status as "draft" | "sent" | "paid" | "cancelled",
+        status: invoice.status,
         paidAmount: invoice.paid_amount || undefined,
         paidDate: invoice.paid_date ? new Date(invoice.paid_date) : undefined,
         paymentMethod: invoice.payment_method || undefined,
