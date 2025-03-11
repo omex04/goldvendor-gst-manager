@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { localDB, TABLES } from '@/lib/localStorage';
+import { getCurrentUser } from '@/lib/localAuth';
 
 // Define settings types
 export interface VendorSettings {
@@ -83,42 +84,32 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load settings from Supabase
+  // Load settings from localStorage
   useEffect(() => {
     const loadSettings = async () => {
       try {
         setIsLoading(true);
         
         // Check if the user is authenticated
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session) {
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
           setIsLoading(false);
           return;
         }
         
-        // Get settings from Supabase
-        const { data, error } = await supabase
-          .from('settings')
-          .select('*')
-          .single();
+        // Get settings from localStorage
+        const settingsData = localDB.selectSingle(TABLES.SETTINGS, { column: 'user_id', value: currentUser.id });
           
-        if (error && error.code !== 'PGRST116') {  // PGRST116 means no rows returned
-          console.error('Error loading settings:', error);
-          toast.error('Failed to load settings');
-          setIsLoading(false);
-          return;
-        }
-        
-        // If we have settings, use them; otherwise use defaults
-        if (data) {
-          setSettings(data.settings);
+        if (settingsData) {
+          setSettings(settingsData.settings);
         } else {
           // Create settings if they don't exist
-          const userId = sessionData.session.user.id;
+          const userId = currentUser.id;
           
-          const { error: insertError } = await supabase
-            .from('settings')
-            .insert({ user_id: userId, settings: defaultSettings });
+          const { error: insertError } = localDB.insert(TABLES.SETTINGS, {
+            user_id: userId,
+            settings: defaultSettings
+          });
             
           if (insertError) {
             console.error('Error creating settings:', insertError);
@@ -135,16 +126,22 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadSettings();
   }, []);
 
-  // Update settings in Supabase
+  // Update settings in localStorage
   const saveSettings = async (updatedSettings: AppSettings) => {
     try {
-      const { error } = await supabase
-        .from('settings')
-        .update({ settings: updatedSettings })
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No authenticated user');
+      }
+      
+      const { error } = localDB.update(
+        TABLES.SETTINGS,
+        { settings: updatedSettings },
+        { column: 'user_id', value: currentUser.id }
+      );
         
       if (error) {
-        throw error;
+        throw new Error(error);
       }
       
       setSettings(updatedSettings);

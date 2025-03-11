@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase, getCurrentUser, getSession } from '@/lib/supabase';
+import { getCurrentUser, getSession, signOut } from '@/lib/localAuth';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextProps {
@@ -25,8 +25,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshUser = async () => {
     setIsLoading(true);
     try {
-      const session = await getSession();
-      const currentUser = await getCurrentUser();
+      const session = getSession();
+      const currentUser = getCurrentUser();
       
       setIsAuthenticated(!!session);
       setUser(currentUser);
@@ -42,21 +42,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     refreshUser();
 
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setIsAuthenticated(!!session);
-        if (session?.user) {
+    // Set up auth state change listener using storage events
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'auth_session') {
+        if (event.newValue) {
+          const session = JSON.parse(event.newValue);
+          setIsAuthenticated(true);
           setUser(session.user);
         } else {
+          setIsAuthenticated(false);
           setUser(null);
         }
-        setIsLoading(false);
       }
-    );
+    };
 
+    window.addEventListener('storage', handleStorageChange);
     return () => {
-      subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { signIn, getSession } from '@/lib/supabase';
+import { signIn, getSession } from '@/lib/localAuth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,9 +15,9 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if already authenticated with Supabase
+    // Check if already authenticated
     const checkAuth = async () => {
-      const session = await getSession();
+      const session = getSession();
       if (session) {
         navigate('/');
       }
@@ -41,7 +41,6 @@ const Login = () => {
       
       if (success) {
         toast.success('Login successful');
-        // We don't need to set localStorage as Supabase manages the session
         navigate('/');
       } else {
         toast.error(error || 'Login failed. Please check your credentials.');
@@ -60,6 +59,13 @@ const Login = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gold-600 dark:text-gold-500">Gold GST Manager</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Login to your account</p>
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900 rounded-md">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <strong>Default credentials:</strong><br />
+              Email: admin@goldgst.com<br />
+              Password: gold123
+            </p>
+          </div>
         </div>
         
         <Card className="dark:bg-gray-800 dark:border-gray-700">
@@ -86,9 +92,6 @@ const Login = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="dark:text-gray-300">Password</Label>
-                  <Button variant="link" className="px-0 font-normal h-auto dark:text-gray-400" type="button">
-                    Forgot password?
-                  </Button>
                 </div>
                 <Input
                   id="password"
@@ -109,14 +112,6 @@ const Login = () => {
               >
                 {isLoading ? 'Logging in...' : 'Log in'}
               </Button>
-              <div className="text-center w-full">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Don't have an account?{" "}
-                  <Button variant="link" className="p-0 font-normal h-auto dark:text-gold-400" asChild>
-                    <Link to="/register">Create an account</Link>
-                  </Button>
-                </p>
-              </div>
             </CardFooter>
           </form>
         </Card>

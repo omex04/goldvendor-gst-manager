@@ -12,22 +12,21 @@ import ViewInvoice from './pages/ViewInvoice';
 import Settings from './pages/Settings';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { checkSupabaseConnection } from './lib/supabase';
 import { Code } from './components/ui/code';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './components/ui/theme-provider';
+import { checkAuthConnection } from './lib/localAuth';
+import { initializeLocalDatabase } from './lib/localStorage';
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const queryClient = new QueryClient();
 
   useEffect(() => {
-    const checkConnection = async () => {
-      const connectionStatus = await checkSupabaseConnection();
-      setIsConnected(connectionStatus);
-    };
-
-    checkConnection();
+    // Initialize local database and check connection
+    initializeLocalDatabase();
+    const connectionStatus = checkAuthConnection();
+    setIsConnected(connectionStatus);
   }, []);
 
   const AuthRoute = ({ children }: { children: React.ReactNode }) => {
@@ -43,7 +42,7 @@ function App() {
   if (isConnected === null) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p>Checking Supabase connection...</p>
+        <p>Loading application...</p>
       </div>
     );
   }
@@ -51,24 +50,18 @@ function App() {
   if (!isConnected) {
     return (
       <div className="flex flex-col justify-center items-center h-screen p-4">
-        <h1 className="text-2xl font-bold mb-4">Failed to Connect to Supabase</h1>
+        <h1 className="text-2xl font-bold mb-4">Failed to Initialize Local Storage</h1>
         <p className="text-gray-600 mb-4">
-          It seems there's an issue connecting to your Supabase project. Please ensure that:
+          It seems there's an issue with your browser's local storage. Please ensure that:
         </p>
         <ul className="list-disc pl-5 mb-4">
-          <li>Your Supabase project is running.</li>
-          <li>Your <code>.env</code> file contains the correct <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>.</li>
-          <li>Your local Supabase CLI is up to date.</li>
+          <li>Cookies and local storage are enabled in your browser.</li>
+          <li>You're not in incognito/private browsing mode.</li>
+          <li>Your browser is up to date.</li>
         </ul>
         <p className="text-gray-600">
-          If you've made changes, restart your development server to apply the new environment variables.
+          You may need to reload the page after adjusting these settings.
         </p>
-        <div className="mt-8">
-          <Code>
-            VITE_SUPABASE_URL=YOUR_SUPABASE_URL
-            VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-          </Code>
-        </div>
       </div>
     );
   }
