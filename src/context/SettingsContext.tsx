@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { localDB, TABLES } from '@/lib/localStorage';
@@ -37,6 +38,12 @@ export interface AppSettings {
   bank: BankSettings;
   gst: GSTSettings;
   preferences: PreferenceSettings;
+}
+
+// Define database settings interface
+interface DBSettings {
+  user_id: string;
+  settings: AppSettings;
 }
 
 // Default settings

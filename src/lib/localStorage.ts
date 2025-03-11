@@ -122,3 +122,15 @@ class LocalDB {
 }
 
 export const localDB = new LocalDB();
+
+// Initialize or reset the local database
+export function initializeLocalDatabase(): boolean {
+  try {
+    // Simply creating a new instance of LocalDB will initialize the tables if needed
+    new LocalDB();
+    return true;
+  } catch (error) {
+    console.error("Failed to initialize local database:", error);
+    return false;
+  }
+}
