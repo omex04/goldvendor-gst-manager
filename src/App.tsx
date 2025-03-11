@@ -39,13 +39,31 @@ function App() {
   }, []);
 
   const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-    const { isAuthenticated } = useAuth();
-    return isAuthenticated ? <Navigate to="/dashboard" /> : children;
+    const { isAuthenticated, isLoading } = useAuth();
+    
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-screen">
+          <p>Loading authentication...</p>
+        </div>
+      );
+    }
+    
+    return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
   };
 
   const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-    const { isAuthenticated } = useAuth();
-    return isAuthenticated ? children : <Navigate to="/login" />;
+    const { isAuthenticated, isLoading } = useAuth();
+    
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-screen">
+          <p>Loading authentication...</p>
+        </div>
+      );
+    }
+    
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
   };
 
   if (isConnected === null) {
@@ -122,7 +140,9 @@ function App() {
                   path="/create-invoice"
                   element={
                     <PrivateRoute>
-                      <CreateInvoice />
+                      <MainLayout>
+                        <CreateInvoice />
+                      </MainLayout>
                     </PrivateRoute>
                   }
                 />
@@ -138,12 +158,15 @@ function App() {
                   path="/settings"
                   element={
                     <PrivateRoute>
-                      <Settings />
+                      <MainLayout>
+                        <Settings />
+                      </MainLayout>
                     </PrivateRoute>
                   }
                 />
                 {/* Make login the default landing page */}
-                <Route path="/" element={<Navigate to="/login" />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
               </Routes>
             </Router>
             <Toaster />

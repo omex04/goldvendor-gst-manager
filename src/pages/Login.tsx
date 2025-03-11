@@ -7,19 +7,21 @@ import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { signIn, getSession } from '@/lib/localAuth';
+import { useAuth } from '@/context/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
     // Check if already authenticated
     const checkAuth = async () => {
       const session = getSession();
       if (session) {
-        navigate('/');
+        navigate('/dashboard');
       }
     };
     
@@ -40,8 +42,9 @@ const Login = () => {
       const { success, error } = await signIn(email, password);
       
       if (success) {
+        await refreshUser(); // Update auth context
         toast.success('Login successful');
-        navigate('/');
+        navigate('/dashboard');
       } else {
         toast.error(error || 'Login failed. Please check your credentials.');
       }

@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { getCurrentUser, getSession, signOut } from '@/lib/localAuth';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -23,7 +22,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any | null>(null);
 
   const refreshUser = async () => {
-    setIsLoading(true);
     try {
       const session = getSession();
       const currentUser = getCurrentUser();
@@ -45,14 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state change listener using storage events
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'auth_session') {
-        if (event.newValue) {
-          const session = JSON.parse(event.newValue);
-          setIsAuthenticated(true);
-          setUser(session.user);
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-        }
+        refreshUser();
       }
     };
 
