@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { localDB, TABLES } from '@/lib/localStorage';
 import { getCurrentUser } from '@/lib/localAuth';
+import { useTheme } from '@/components/ui/theme-provider';
 
 // Define settings types
 export interface VendorSettings {
@@ -89,6 +90,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const { setTheme } = useTheme();
 
   // Load settings from localStorage
   useEffect(() => {
@@ -97,7 +99,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsLoading(true);
         
         // Check if the user is authenticated
-        const currentUser = getCurrentUser();
+        const currentUser = await getCurrentUser();
         if (!currentUser) {
           setIsLoading(false);
           return;
@@ -108,6 +110,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           
         if (settingsData) {
           setSettings(settingsData.settings);
+          
+          // Apply theme based on settings
+          if (settingsData.settings.preferences.darkMode) {
+            setTheme('dark');
+          } else {
+            setTheme('light');
+          }
         } else {
           // Create settings if they don't exist
           const userId = currentUser.id;
@@ -130,12 +139,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     
     loadSettings();
-  }, []);
+  }, [setTheme]);
 
   // Update settings in localStorage
   const saveSettings = async (updatedSettings: AppSettings) => {
     try {
-      const currentUser = getCurrentUser();
+      const currentUser = await getCurrentUser();
       if (!currentUser) {
         throw new Error('No authenticated user');
       }
@@ -208,6 +217,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const success = await saveSettings(updatedSettings);
     if (success) {
       toast.success('Preferences saved successfully');
+      
+      // Apply theme based on updated preferences
+      if (preferenceSettings.darkMode) {
+        setTheme('dark');
+      } else {
+        setTheme('light');
+      }
     }
   };
 

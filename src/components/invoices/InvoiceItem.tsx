@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TrashIcon } from 'lucide-react';
-import { calculateGST, calculatePriceByWeight } from '@/utils/gstCalculator';
+import { calculateGST, calculatePriceByWeight, useGoldGSTRates } from '@/utils/gstCalculator';
+import { useSettings } from '@/context/SettingsContext';
 
 interface InvoiceItemProps {
   item: any;
@@ -14,6 +15,19 @@ interface InvoiceItemProps {
 
 export function InvoiceItem({ item, index, updateItem, removeItem }: InvoiceItemProps) {
   const [localItem, setLocalItem] = useState(item);
+  const { settings } = useSettings();
+  const goldRates = useGoldGSTRates();
+  
+  // Initialize with settings rates if needed
+  useEffect(() => {
+    if (settings.gst.autoCalculate && localItem.cgstRate === 0 && localItem.sgstRate === 0) {
+      setLocalItem(prev => ({
+        ...prev,
+        cgstRate: goldRates.cgst,
+        sgstRate: goldRates.sgst
+      }));
+    }
+  }, [settings.gst.autoCalculate, localItem.cgstRate, localItem.sgstRate, goldRates.cgst, goldRates.sgst]);
   
   // Re-calculate whenever necessary inputs change
   useEffect(() => {
@@ -29,16 +43,18 @@ export function InvoiceItem({ item, index, updateItem, removeItem }: InvoiceItem
       
       const { cgstAmount, sgstAmount, totalAmount } = calculateGST(
         price,
-        parseFloat(localItem.cgstRate || 1.5),
-        parseFloat(localItem.sgstRate || 1.5)
+        parseFloat(localItem.cgstRate || goldRates.cgst),
+        parseFloat(localItem.sgstRate || goldRates.sgst)
       );
       
       setLocalItem({
-        ...localItem,
-        price,
-        cgstAmount,
-        sgstAmount,
-        totalAmount,
+        ...prev => ({
+          ...prev,
+          price,
+          cgstAmount,
+          sgstAmount,
+          totalAmount,
+        })
       });
     }
   }, [
@@ -47,6 +63,8 @@ export function InvoiceItem({ item, index, updateItem, removeItem }: InvoiceItem
     localItem.makingCharges,
     localItem.cgstRate,
     localItem.sgstRate,
+    goldRates.cgst,
+    goldRates.sgst
   ]);
   
   // Update parent whenever local item changes
@@ -56,10 +74,10 @@ export function InvoiceItem({ item, index, updateItem, removeItem }: InvoiceItem
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setLocalItem({
-      ...localItem,
+    setLocalItem(prev => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
   return (

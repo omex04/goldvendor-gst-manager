@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,6 @@ export function InvoiceForm() {
   const [sgstTotal, setSgstTotal] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
   
-  // Save invoice mutation
   const saveInvoiceMutation = useMutation({
     mutationFn: saveInvoice,
     onSuccess: (invoiceId) => {
@@ -61,7 +59,6 @@ export function InvoiceForm() {
     },
   });
   
-  // Add a new empty item
   const addItem = () => {
     const newItem = {
       id: uuidv4(),
@@ -85,7 +82,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Update an item in the items array
   const updateItem = (index: number, updatedItem: any) => {
     const updatedItems = [...invoice.items];
     updatedItems[index] = updatedItem;
@@ -96,7 +92,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Remove an item from the items array
   const removeItem = (index: number) => {
     const updatedItems = [...invoice.items];
     updatedItems.splice(index, 1);
@@ -107,7 +102,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Update customer information
   const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setInvoice({
@@ -119,7 +113,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Update invoice notes
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInvoice({
       ...invoice,
@@ -127,7 +120,6 @@ export function InvoiceForm() {
     });
   };
 
-  // Update invoice number
   const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInvoice({
       ...invoice,
@@ -135,7 +127,6 @@ export function InvoiceForm() {
     });
   };
 
-  // Update payment method
   const handlePaymentMethodChange = (value: string) => {
     setInvoice({
       ...invoice,
@@ -143,7 +134,6 @@ export function InvoiceForm() {
     });
   };
   
-  // Calculate totals whenever items change
   useEffect(() => {
     if (invoice.items.length > 0) {
       const { subtotal, cgstTotal, sgstTotal, grandTotal } = calculateInvoiceTotals(invoice.items);
@@ -159,15 +149,10 @@ export function InvoiceForm() {
     }
   }, [invoice.items]);
   
-  // Auto-save draft if enabled in preferences
   useEffect(() => {
     const autoSaveDraft = async () => {
-      // Only auto-save if:
-      // 1. Auto-save is enabled in preferences
-      // 2. We have customer information
-      // 3. We have at least one item
-      // 4. We're not currently saving
       if (
+        !settingsLoading && 
         settings.preferences.autoSave &&
         invoice.customer.name &&
         invoice.customer.address &&
@@ -193,15 +178,13 @@ export function InvoiceForm() {
       }
     };
     
-    // Set up timer for auto-save (every 2 minutes)
     const autoSaveTimer = setInterval(autoSaveDraft, 120000);
     
     return () => {
       clearInterval(autoSaveTimer);
     };
-  }, [invoice, subtotal, cgstTotal, sgstTotal, grandTotal, settings.preferences.autoSave, saveInvoiceMutation.isPending]);
+  }, [invoice, subtotal, cgstTotal, sgstTotal, grandTotal, settings.preferences.autoSave, settingsLoading, saveInvoiceMutation.isPending]);
   
-  // Save the invoice
   const saveInvoiceDraft = () => {
     if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
       toast.error('Please fill in customer details');
@@ -225,7 +208,6 @@ export function InvoiceForm() {
     saveInvoiceMutation.mutate(completeInvoice);
   };
   
-  // Generate and send the invoice
   const generateInvoice = () => {
     if (!invoice.customer.name || !invoice.customer.address || !invoice.customer.phone) {
       toast.error('Please fill in customer details');
