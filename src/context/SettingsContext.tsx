@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
 
 // Define settings types
 export interface VendorSettings {
@@ -83,28 +83,50 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load settings
+  // Load settings from Supabase
   useEffect(() => {
     const loadSettings = async () => {
       try {
         setIsLoading(true);
         
-        // Get user from localStorage to check if user is logged in
-        const token = localStorage.getItem('token');
-        if (!token) {
+        // Check if the user is authenticated
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
           setIsLoading(false);
           return;
         }
         
-        // Get settings from API
-        const settingsData = await api.settings.getAll();
+        // Get settings from Supabase
+        const { data, error } = await supabase
+          .from('settings')
+          .select('*')
+          .single();
+          
+        if (error && error.code !== 'PGRST116') {  // PGRST116 means no rows returned
+          console.error('Error loading settings:', error);
+          toast.error('Failed to load settings');
+          setIsLoading(false);
+          return;
+        }
         
-        if (settingsData) {
-          setSettings(settingsData);
+        // If we have settings, use them; otherwise use defaults
+        if (data) {
+          setSettings(data.settings);
+        } else {
+          // Create settings if they don't exist
+          const userId = sessionData.session.user.id;
+          
+          const { error: insertError } = await supabase
+            .from('settings')
+            .insert({ user_id: userId, settings: defaultSettings });
+            
+          if (insertError) {
+            console.error('Error creating settings:', insertError);
+            toast.error('Failed to create settings');
+          }
         }
       } catch (error) {
-        console.error('Error loading settings:', error);
-        toast.error('Failed to load settings');
+        console.error('Error in settings initialization:', error);
       } finally {
         setIsLoading(false);
       }
@@ -113,71 +135,76 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadSettings();
   }, []);
 
+  // Update settings in Supabase
+  const saveSettings = async (updatedSettings: AppSettings) => {
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .update({ settings: updatedSettings })
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      setSettings(updatedSettings);
+      return true;
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings');
+      return false;
+    }
+  };
+
   // Update vendor settings
   const updateVendorSettings = async (vendorSettings: VendorSettings) => {
-    try {
-      await api.settings.updateVendor(vendorSettings);
-      
-      setSettings(prev => ({
-        ...prev,
-        vendor: vendorSettings
-      }));
-      
+    const updatedSettings = {
+      ...settings,
+      vendor: vendorSettings
+    };
+    
+    const success = await saveSettings(updatedSettings);
+    if (success) {
       toast.success('Vendor settings saved successfully');
-    } catch (error) {
-      console.error('Error saving vendor settings:', error);
-      toast.error('Failed to save vendor settings');
     }
   };
 
   // Update bank settings
   const updateBankSettings = async (bankSettings: BankSettings) => {
-    try {
-      await api.settings.updateBank(bankSettings);
-      
-      setSettings(prev => ({
-        ...prev,
-        bank: bankSettings
-      }));
-      
+    const updatedSettings = {
+      ...settings,
+      bank: bankSettings
+    };
+    
+    const success = await saveSettings(updatedSettings);
+    if (success) {
       toast.success('Bank details saved successfully');
-    } catch (error) {
-      console.error('Error saving bank settings:', error);
-      toast.error('Failed to save bank settings');
     }
   };
 
   // Update GST settings
   const updateGSTSettings = async (gstSettings: GSTSettings) => {
-    try {
-      await api.settings.updateGST(gstSettings);
-      
-      setSettings(prev => ({
-        ...prev,
-        gst: gstSettings
-      }));
-      
+    const updatedSettings = {
+      ...settings,
+      gst: gstSettings
+    };
+    
+    const success = await saveSettings(updatedSettings);
+    if (success) {
       toast.success('GST settings saved successfully');
-    } catch (error) {
-      console.error('Error saving GST settings:', error);
-      toast.error('Failed to save GST settings');
     }
   };
 
   // Update preference settings
   const updatePreferenceSettings = async (preferenceSettings: PreferenceSettings) => {
-    try {
-      await api.settings.updatePreferences(preferenceSettings);
-      
-      setSettings(prev => ({
-        ...prev,
-        preferences: preferenceSettings
-      }));
-      
+    const updatedSettings = {
+      ...settings,
+      preferences: preferenceSettings
+    };
+    
+    const success = await saveSettings(updatedSettings);
+    if (success) {
       toast.success('Preferences saved successfully');
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-      toast.error('Failed to save preferences');
     }
   };
 

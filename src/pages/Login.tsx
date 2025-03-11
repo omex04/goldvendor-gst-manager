@@ -6,21 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
+import { signIn, getSession } from '@/lib/supabase';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Redirect if already authenticated
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
+    // Check if already authenticated with Supabase
+    const checkAuth = async () => {
+      const session = await getSession();
+      if (session) {
+        navigate('/');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,13 +37,14 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const success = await login(email, password);
+      const { success, error } = await signIn(email, password);
       
       if (success) {
         toast.success('Login successful');
+        // We don't need to set localStorage as Supabase manages the session
         navigate('/');
       } else {
-        toast.error('Login failed. Please check your credentials.');
+        toast.error(error || 'Login failed. Please check your credentials.');
       }
     } catch (error: any) {
       toast.error(error.message || 'Login failed. Please try again later.');
