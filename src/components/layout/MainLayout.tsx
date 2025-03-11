@@ -9,6 +9,7 @@ import { useTheme } from '@/components/ui/theme-provider';
 import { toast } from 'sonner';
 import { signOut, getCurrentUser } from '@/lib/localAuth';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -21,9 +22,10 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('user@example.com');
   const [userInitials, setUserInitials] = useState('U');
+  const { refreshUser } = useAuth();
   
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: FileText, label: 'Create Invoice', path: '/create-invoice' },
     { icon: BarChart3, label: 'Invoice History', path: '/invoice-history' },
     { icon: Settings, label: 'Settings', path: '/settings' },
@@ -48,6 +50,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       const { success, error } = await signOut();
       
       if (success) {
+        await refreshUser(); // Update auth context after logout
         toast.success('Logged out successfully');
         navigate('/login');
       } else {
