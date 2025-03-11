@@ -12,20 +12,29 @@ import ViewInvoice from './pages/ViewInvoice';
 import Settings from './pages/Settings';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { Code } from './components/ui/code';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './components/ui/theme-provider';
 import { checkAuthConnection } from './lib/localAuth';
-import { initializeLocalDatabase } from './lib/localStorage';
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const queryClient = new QueryClient();
 
   useEffect(() => {
-    // Initialize local database and check connection
-    initializeLocalDatabase();
-    const connectionStatus = checkAuthConnection();
+    // Initialize local storage and check connection
+    const initializeLocalStorage = () => {
+      try {
+        // Creating a test entry to see if localStorage is working
+        localStorage.setItem('test', 'connected');
+        localStorage.removeItem('test');
+        return true;
+      } catch (error) {
+        console.error("LocalStorage error:", error);
+        return false;
+      }
+    };
+    
+    const connectionStatus = checkAuthConnection() && initializeLocalStorage();
     setIsConnected(connectionStatus);
   }, []);
 
@@ -133,7 +142,8 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-                <Route path="/" element={<Navigate to="/dashboard" />} />
+                {/* Make login the default landing page */}
+                <Route path="/" element={<Navigate to="/login" />} />
               </Routes>
             </Router>
             <Toaster />

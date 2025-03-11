@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
@@ -8,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ui/theme-provider';
 import { toast } from 'sonner';
-import { signOut, getCurrentUser } from '@/lib/supabase';
+import { signOut, getCurrentUser } from '@/lib/localAuth';
 import { useState, useEffect } from 'react';
 
 interface MainLayoutProps {
@@ -31,7 +30,6 @@ export function MainLayout({ children }: MainLayoutProps) {
   ];
 
   useEffect(() => {
-    // Fetch current user data from Supabase
     const fetchUserData = async () => {
       const user = await getCurrentUser();
       if (user) {
