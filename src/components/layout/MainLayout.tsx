@@ -21,7 +21,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { settings, updatePreferenceSettings } = useSettings();
+  const { settings, updatePreferenceSettings, isLoading } = useSettings();
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('user@example.com');
   const [userInitials, setUserInitials] = useState('U');
@@ -70,7 +70,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     setTheme(newTheme);
     
     // Also update the settings preference
-    if (!settings.isLoading) {
+    if (!isLoading) {
       updatePreferenceSettings({
         ...settings.preferences,
         darkMode: newTheme === 'dark'
