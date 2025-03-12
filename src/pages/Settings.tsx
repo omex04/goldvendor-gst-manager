@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { useTheme } from '@/components/ui/theme-provider';
 
 const Settings = () => {
   const { settings, updateVendorSettings, updateBankSettings, updateGSTSettings, updatePreferenceSettings, isLoading } = useSettings();
-  const { setTheme } = useTheme();
+  const { theme } = useTheme();
   
   // Local state for form values
   const [vendorInfo, setVendorInfo] = React.useState(settings.vendor);
@@ -29,11 +30,6 @@ const Settings = () => {
       setPreferences(settings.preferences);
     }
   }, [settings, isLoading]);
-  
-  // Update theme when dark mode preference changes
-  useEffect(() => {
-    setTheme(preferences.darkMode ? 'dark' : 'light');
-  }, [preferences.darkMode, setTheme]);
 
   const handleVendorInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

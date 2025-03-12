@@ -19,6 +19,9 @@ import { checkAuthConnection } from './lib/localAuth';
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const queryClient = new QueryClient();
+  
+  // Get the stored theme to initialize with
+  const storedTheme = localStorage.getItem('vite-ui-theme') || 'light';
 
   useEffect(() => {
     // Initialize local storage and check connection
@@ -94,7 +97,7 @@ function App() {
   }
 
   return (
-    <ThemeProvider defaultTheme="light">
+    <ThemeProvider defaultTheme={storedTheme as "dark" | "light" | "system"}>
       <AuthProvider>
         <SettingsProvider>
           <QueryClientProvider client={queryClient}>

@@ -79,40 +79,40 @@ export function InvoiceItem({ item, index, updateItem, removeItem }: InvoiceItem
   };
 
   return (
-    <div className="p-4 mb-4 border border-border rounded-lg bg-white/50">
+    <div className="p-4 mb-4 border border-border rounded-lg bg-white/50 dark:bg-gray-800/50 dark:border-gray-700">
       {/* First row */}
       <div className="grid grid-cols-12 gap-2 mb-3">
         <div className="col-span-6 md:col-span-6">
-          <label className="text-xs text-muted-foreground mb-1 block">Item Name</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">Item Name</label>
           <Input
             name="name"
             value={localItem.name}
             onChange={handleInputChange}
             placeholder="Gold Ring"
-            className="text-sm"
+            className="text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
         
         <div className="col-span-3 md:col-span-3">
-          <label className="text-xs text-muted-foreground mb-1 block">HSN Code</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">HSN Code</label>
           <Input
             name="hsnCode"
             value={localItem.hsnCode}
             onChange={handleInputChange}
             placeholder="7113"
-            className="text-sm"
+            className="text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
         
         <div className="col-span-3 md:col-span-3">
-          <label className="text-xs text-muted-foreground mb-1 block">Weight (g)</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">Weight (g)</label>
           <Input
             name="weightInGrams"
             type="number"
             value={localItem.weightInGrams}
             onChange={handleInputChange}
             placeholder="10.5"
-            className="text-sm"
+            className="text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
       </div>
@@ -120,71 +120,71 @@ export function InvoiceItem({ item, index, updateItem, removeItem }: InvoiceItem
       {/* Second row */}
       <div className="grid grid-cols-12 gap-2">
         <div className="col-span-3 md:col-span-2">
-          <label className="text-xs text-muted-foreground mb-1 block">Rate/g (₹)</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">Rate/g (₹)</label>
           <Input
             name="ratePerGram"
             type="number"
             value={localItem.ratePerGram}
             onChange={handleInputChange}
             placeholder="5500"
-            className="text-sm"
+            className="text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
         
         <div className="col-span-3 md:col-span-2">
-          <label className="text-xs text-muted-foreground mb-1 block">Making (₹)</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">Making (₹)</label>
           <Input
             name="makingCharges"
             type="number"
             value={localItem.makingCharges}
             onChange={handleInputChange}
             placeholder="2000"
-            className="text-sm"
+            className="text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
         
         <div className="col-span-3 md:col-span-2">
-          <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">Price (₹)</label>
           <Input
             name="price"
             type="number"
             value={localItem.price}
             readOnly
-            className="text-sm bg-muted/50"
+            className="text-sm bg-muted/50 dark:bg-gray-700/50 dark:text-gray-300 dark:border-gray-600"
           />
         </div>
         
         <div className="col-span-3 md:col-span-2">
-          <label className="text-xs text-muted-foreground mb-1 block">CGST (%)</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">CGST (%)</label>
           <Input
             name="cgstRate"
             type="number"
             value={localItem.cgstRate}
             onChange={handleInputChange}
-            className="text-sm"
+            className="text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
         
         <div className="col-span-3 md:col-span-2">
-          <label className="text-xs text-muted-foreground mb-1 block">SGST (%)</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">SGST (%)</label>
           <Input
             name="sgstRate"
             type="number"
             value={localItem.sgstRate}
             onChange={handleInputChange}
-            className="text-sm"
+            className="text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
         
         <div className="col-span-6 md:col-span-2">
-          <label className="text-xs text-muted-foreground mb-1 block">Total (₹)</label>
+          <label className="text-xs text-muted-foreground mb-1 block dark:text-gray-400">Total (₹)</label>
           <div className="flex items-center gap-2">
             <Input
               name="totalAmount"
               type="number"
               value={localItem.totalAmount}
               readOnly
-              className="text-sm bg-muted/50"
+              className="text-sm bg-muted/50 dark:bg-gray-700/50 dark:text-gray-300 dark:border-gray-600"
             />
             <Button 
               variant="destructive" 

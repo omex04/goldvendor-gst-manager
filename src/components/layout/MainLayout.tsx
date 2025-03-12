@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
@@ -10,6 +11,7 @@ import { toast } from 'sonner';
 import { signOut, getCurrentUser } from '@/lib/localAuth';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -19,6 +21,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { settings, updatePreferenceSettings } = useSettings();
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('user@example.com');
   const [userInitials, setUserInitials] = useState('U');
@@ -59,6 +62,19 @@ export function MainLayout({ children }: MainLayoutProps) {
     } catch (error: any) {
       toast.error(error.message || 'Logout failed');
       console.error('Logout error:', error);
+    }
+  };
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    
+    // Also update the settings preference
+    if (!settings.isLoading) {
+      updatePreferenceSettings({
+        ...settings.preferences,
+        darkMode: newTheme === 'dark'
+      });
     }
   };
 
@@ -123,7 +139,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <Button 
               variant="outline" 
               size="icon" 
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onClick={toggleTheme}
               className="ml-auto mr-2 dark:border-gray-700 dark:text-gray-200"
             >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
