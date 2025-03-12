@@ -47,15 +47,13 @@ export function InvoiceItem({ item, index, updateItem, removeItem }: InvoiceItem
         parseFloat(localItem.sgstRate || goldRates.sgst)
       );
       
-      setLocalItem({
-        ...prev => ({
-          ...prev,
-          price,
-          cgstAmount,
-          sgstAmount,
-          totalAmount,
-        })
-      });
+      setLocalItem(prev => ({
+        ...prev,
+        price,
+        cgstAmount,
+        sgstAmount,
+        totalAmount,
+      }));
     }
   }, [
     localItem.weightInGrams,

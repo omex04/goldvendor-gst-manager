@@ -13,14 +13,19 @@ export const calculateGST = (
   cgstRate: number,
   sgstRate: number
 ) => {
-  const cgstAmount = (price * cgstRate) / 100;
-  const sgstAmount = (price * sgstRate) / 100;
-  const totalAmount = price + cgstAmount + sgstAmount;
+  // Ensure the inputs are valid numbers
+  const validPrice = isNaN(price) ? 0 : price;
+  const validCgstRate = isNaN(cgstRate) ? 0 : cgstRate;
+  const validSgstRate = isNaN(sgstRate) ? 0 : sgstRate;
+  
+  const cgstAmount = (validPrice * validCgstRate) / 100;
+  const sgstAmount = (validPrice * validSgstRate) / 100;
+  const totalAmount = validPrice + cgstAmount + sgstAmount;
 
   return {
-    price,
-    cgstRate,
-    sgstRate,
+    price: validPrice,
+    cgstRate: validCgstRate,
+    sgstRate: validSgstRate,
     cgstAmount,
     sgstAmount,
     totalAmount,
@@ -33,9 +38,21 @@ export const calculateGST = (
  * @returns Object with subtotal, tax totals, and grand total
  */
 export const calculateInvoiceTotals = (items: any[]) => {
-  const subtotal = items.reduce((sum, item) => sum + item.price, 0);
-  const cgstTotal = items.reduce((sum, item) => sum + item.cgstAmount, 0);
-  const sgstTotal = items.reduce((sum, item) => sum + item.sgstAmount, 0);
+  const subtotal = items.reduce((sum, item) => {
+    const itemPrice = parseFloat(item.price) || 0;
+    return sum + itemPrice;
+  }, 0);
+  
+  const cgstTotal = items.reduce((sum, item) => {
+    const cgstAmount = parseFloat(item.cgstAmount) || 0;
+    return sum + cgstAmount;
+  }, 0);
+  
+  const sgstTotal = items.reduce((sum, item) => {
+    const sgstAmount = parseFloat(item.sgstAmount) || 0;
+    return sum + sgstAmount;
+  }, 0);
+  
   const grandTotal = subtotal + cgstTotal + sgstTotal;
 
   return {
@@ -84,5 +101,10 @@ export const calculatePriceByWeight = (
   ratePerGram: number,
   makingCharges = 0
 ) => {
-  return weightInGrams * ratePerGram + makingCharges;
+  // Ensure the inputs are valid numbers
+  const validWeight = isNaN(weightInGrams) ? 0 : weightInGrams;
+  const validRate = isNaN(ratePerGram) ? 0 : ratePerGram;
+  const validMakingCharges = isNaN(makingCharges) ? 0 : makingCharges;
+  
+  return validWeight * validRate + validMakingCharges;
 };
