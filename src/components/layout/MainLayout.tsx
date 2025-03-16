@@ -70,7 +70,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     setTheme(newTheme);
     
     // Also update the settings preference
-    if (!isLoading) {
+    if (!isLoading && settings) {
       updatePreferenceSettings({
         ...settings.preferences,
         darkMode: newTheme === 'dark'

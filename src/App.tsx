@@ -10,6 +10,11 @@ import InvoiceHistory from './pages/InvoiceHistory';
 import CreateInvoice from './pages/CreateInvoice';
 import ViewInvoice from './pages/ViewInvoice';
 import Settings from './pages/Settings';
+import LandingPage from './pages/LandingPage';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { SettingsProvider } from './context/SettingsContext';
@@ -103,6 +108,14 @@ function App() {
           <QueryClientProvider client={queryClient}>
             <Router>
               <Routes>
+                {/* Landing and Public Pages */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/about" element={<AboutUs />} />
+                <Route path="/contact" element={<ContactUs />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsConditions />} />
+                
+                {/* Auth Pages */}
                 <Route
                   path="/login"
                   element={
@@ -119,6 +132,8 @@ function App() {
                     </AuthRoute>
                   }
                 />
+                
+                {/* Protected Application Pages */}
                 <Route
                   path="/dashboard"
                   element={
@@ -167,9 +182,9 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-                {/* Make login the default landing page */}
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="*" element={<Navigate to="/login" replace />} />
+                
+                {/* Fallback Route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Router>
             <Toaster />
