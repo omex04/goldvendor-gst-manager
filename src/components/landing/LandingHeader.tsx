@@ -34,7 +34,7 @@ const LandingHeader = () => {
             <Link to="/" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
               Home
             </Link>
-            <a href="#pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
+            <a href="/#pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
               Pricing
             </a>
             <Link to="/about" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
@@ -84,7 +84,7 @@ const LandingHeader = () => {
               Home
             </Link>
             <a 
-              href="#pricing" 
+              href="/#pricing" 
               className="text-sm font-medium text-foreground hover:text-foreground/80 dark:text-gray-300"
               onClick={() => setIsMenuOpen(false)}
             >

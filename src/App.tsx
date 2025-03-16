@@ -71,7 +71,7 @@ function App() {
       );
     }
     
-    return isAuthenticated ? children : <Navigate to="/login" replace />;
+    return isAuthenticated ? children : <Navigate to="/" replace />;
   };
 
   if (isConnected === null) {
