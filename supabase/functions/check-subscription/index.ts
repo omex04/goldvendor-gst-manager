@@ -44,53 +44,67 @@ serve(async (req: Request) => {
     }
 
     // Check if user has an active subscription
-    const { data: subscriptions, error: subscriptionError } = await supabaseClient
+    const { data: subscriptions, error: subError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
       .eq("status", "active")
-      .gte("valid_until", new Date().toISOString())
-      .order("valid_until", { ascending: false })
+      .lt("valid_until", new Date().toISOString())
+      .order("created_at", { ascending: false })
       .limit(1);
 
-    if (subscriptionError) {
-      throw new Error(`Failed to check subscription: ${subscriptionError.message}`);
+    if (subError) {
+      console.error("Error fetching subscriptions:", subError);
     }
 
-    const activeSubscription = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
+    const subscription = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
+    const isSubscribed = !!subscription;
 
-    // Check invoice usage for free tier
-    const { data: usageData, error: usageError } = await supabaseClient
+    // Get user's free invoice usage
+    let { data: usageData, error: usageError } = await supabaseClient
       .from("invoice_usage")
-      .select("free_invoices_used")
+      .select("*")
       .eq("user_id", user.id)
       .single();
 
     if (usageError && usageError.code !== "PGRST116") {
-      // PGRST116 means no rows found, which is fine for a new user
-      throw new Error(`Failed to check invoice usage: ${usageError.message}`);
+      console.error("Error fetching invoice usage:", usageError);
     }
 
-    const freeInvoicesUsed = usageData?.free_invoices_used || 0;
-    const freeInvoicesLimit = 3; // Free tier limit
-    const canUseFreeTier = freeInvoicesUsed < freeInvoicesLimit;
+    // Create usage record if it doesn't exist
+    if (!usageData) {
+      const { data: newUsage, error: createError } = await supabaseClient
+        .from("invoice_usage")
+        .insert({ user_id: user.id, free_invoices_used: 0 })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating invoice usage:", createError);
+        throw createError;
+      }
+
+      usageData = newUsage;
+    }
+
+    // Determine if user can create invoices
+    const freeUsageLimit = 3;
+    const freeUsageRemaining = freeUsageLimit - (usageData?.free_invoices_used || 0);
+    const canUseFreeTier = freeUsageRemaining > 0;
+    const canCreateInvoice = isSubscribed || canUseFreeTier;
 
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          user: {
-            id: user.id,
-            email: user.email,
-          },
-          subscription: activeSubscription,
+          isSubscribed,
+          canCreateInvoice,
+          subscription,
           freeUsage: {
-            used: freeInvoicesUsed,
-            limit: freeInvoicesLimit,
+            used: usageData?.free_invoices_used || 0,
+            limit: freeUsageLimit,
             canUseFreeTier,
           },
-          isSubscribed: !!activeSubscription,
-          canCreateInvoice: !!activeSubscription || canUseFreeTier,
         },
       }),
       {

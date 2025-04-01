@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ui/theme-provider';
 import { toast } from 'sonner';
-import { signOut, getCurrentUser } from '@/lib/localAuth';
-import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useSettings } from '@/context/SettingsContext';
 
 interface MainLayoutProps {
@@ -25,7 +25,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('user@example.com');
   const [userInitials, setUserInitials] = useState('U');
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -35,29 +35,24 @@ export function MainLayout({ children }: MainLayoutProps) {
   ];
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = await getCurrentUser();
-      if (user) {
-        const name = user.user_metadata?.name || 'User';
-        setUserName(name);
-        setUserEmail(user.email || 'user@example.com');
-        setUserInitials(name.substring(0, 2).toUpperCase());
-      }
-    };
-
-    fetchUserData();
-  }, []);
+    if (user) {
+      const name = user.user_metadata?.full_name || 'User';
+      setUserName(name);
+      setUserEmail(user.email || 'user@example.com');
+      setUserInitials(name.substring(0, 2).toUpperCase());
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     try {
-      const { success, error } = await signOut();
+      const { error } = await supabase.auth.signOut();
       
-      if (success) {
+      if (error) {
+        throw error;
+      } else {
         await refreshUser(); // Update auth context after logout
         toast.success('Logged out successfully');
-        navigate('/login');
-      } else {
-        toast.error(error || 'Logout failed');
+        navigate('/');
       }
     } catch (error: any) {
       toast.error(error.message || 'Logout failed');

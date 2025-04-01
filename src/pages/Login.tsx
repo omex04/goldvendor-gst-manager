@@ -16,19 +16,14 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { isAuthenticated, refreshUser } = useAuth();
 
   useEffect(() => {
-    // Check if already authenticated
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate('/dashboard');
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
+    // If already authenticated, redirect to dashboard
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +113,14 @@ const Login = () => {
                   <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gold-600 dark:hover:text-gold-500 transition-colors">
                     Back to home
                   </Link>
+                </div>
+                <div className="text-center w-full">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Don't have an account?{' '}
+                    <Link to="/register" className="text-gold-600 dark:text-gold-500 hover:underline transition-colors">
+                      Sign up
+                    </Link>
+                  </p>
                 </div>
               </CardFooter>
             </form>

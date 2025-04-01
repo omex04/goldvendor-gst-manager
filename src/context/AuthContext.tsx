@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -25,6 +26,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const refreshUser = async () => {
     try {
@@ -34,6 +37,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setIsAuthenticated(!!data.session);
+
+      // Handle redirects based on auth state and current path
+      if (data.session) {
+        // If authenticated and on auth pages, redirect to dashboard
+        if (['/login', '/register'].includes(location.pathname)) {
+          navigate('/dashboard');
+        }
+      } else {
+        // If not authenticated and on protected pages, redirect to login
+        if (!['/login', '/register', '/', '/about', '/contact', '/pricing', '/terms', '/privacy'].includes(location.pathname)) {
+          navigate('/login');
+        }
+      }
     } catch (error) {
       console.error("Auth refresh error:", error);
       setIsAuthenticated(false);
@@ -45,9 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Initial session check
-    refreshUser();
-
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
@@ -58,11 +71,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Show toast for certain auth events
         if (event === 'SIGNED_IN') {
           toast.success('Signed in successfully');
+          navigate('/dashboard');
         } else if (event === 'SIGNED_OUT') {
           toast.info('Signed out');
+          navigate('/');
         }
       }
     );
+
+    // Initial session check
+    refreshUser();
 
     return () => {
       subscription.unsubscribe();

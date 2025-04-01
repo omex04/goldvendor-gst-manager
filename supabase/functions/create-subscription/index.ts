@@ -49,10 +49,15 @@ serve(async (req: Request) => {
     }
 
     // Get the request body
-    const { planId, planName, amount, currency = "INR" } = await req.json();
+    const requestData = await req.json();
+    const { planId, planName, amount, currency = "INR" } = requestData;
 
-    if (!planId || !planName || !amount) {
+    if (!planId || !amount) {
       throw new Error("Missing required parameters");
+    }
+
+    if (!Razorpay.keyId || !Razorpay.keySecret) {
+      throw new Error("Razorpay API keys are not configured");
     }
 
     // Current timestamp in seconds
@@ -79,7 +84,7 @@ serve(async (req: Request) => {
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Razorpay error:", errorData);
-      throw new Error(`Razorpay error: ${errorData.error.description || "Could not create order"}`);
+      throw new Error(`Razorpay error: ${errorData.error?.description || "Could not create order"}`);
     }
 
     const orderData = await response.json();

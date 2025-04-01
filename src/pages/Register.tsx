@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/context/AuthContext';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -17,6 +18,14 @@ const Register = () => {
   const [businessName, setBusinessName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // If already authenticated, redirect to dashboard
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +51,14 @@ const Register = () => {
       
       if (error) throw error;
       
+      if (data.user && !data.user.identities?.length) {
+        toast.error('This email is already registered. Please log in instead.');
+        navigate('/login');
+        return;
+      }
+      
       toast.success('Registration successful! Please check your email for confirmation.');
-      navigate('/login');
+      navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'Registration failed. Please try again later.');
       console.error('Registration error:', error);

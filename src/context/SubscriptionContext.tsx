@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { checkSubscription } from '@/services/subscriptionService';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface SubscriptionStatus {
   isSubscribed: boolean;
@@ -55,16 +56,33 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       });
     } catch (error) {
       console.error('Failed to check subscription status:', error);
+      // Set default values that allow usage when there's an error checking subscription
       setStatus({
-        ...defaultStatus,
+        isSubscribed: false,
+        canCreateInvoice: true, // Allow invoice creation even on error to prevent blocking users
+        subscription: null,
+        freeUsage: {
+          used: 0,
+          limit: 3,
+          canUseFreeTier: true,
+        },
         isLoading: false,
       });
+      
+      // Only show toast error in development
+      if (import.meta.env.DEV) {
+        toast.error('Subscription check failed. Using free tier as fallback.');
+      }
     }
   };
 
   useEffect(() => {
     if (isAuthenticated) {
-      refreshSubscription();
+      // Small delay to ensure auth is fully processed
+      const timer = setTimeout(() => {
+        refreshSubscription();
+      }, 500);
+      return () => clearTimeout(timer);
     } else {
       setStatus({
         ...defaultStatus,

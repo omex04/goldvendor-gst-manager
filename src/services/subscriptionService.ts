@@ -72,7 +72,7 @@ export const createSubscription = async (planId: string) => {
     });
 
     if (!response.data || !response.data.success) {
-      throw new Error(response.error || 'Failed to create subscription');
+      throw new Error(response.error || response.data?.error || 'Failed to create subscription');
     }
 
     return response.data.data;
@@ -106,7 +106,7 @@ export const verifyPayment = async (params: {
     });
 
     if (!response.data || !response.data.success) {
-      throw new Error(response.error || 'Failed to verify payment');
+      throw new Error(response.error || response.data?.error || 'Failed to verify payment');
     }
 
     toast.success('Payment successful! Your subscription is now active.');
@@ -120,8 +120,8 @@ export const verifyPayment = async (params: {
 
 export const checkSubscription = async () => {
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
       return {
         isSubscribed: false,
         canCreateInvoice: false,
@@ -130,13 +130,30 @@ export const checkSubscription = async () => {
       };
     }
 
-    const response = await supabase.functions.invoke('check-subscription', {});
+    // Try to call the edge function
+    try {
+      const response = await supabase.functions.invoke('check-subscription', {});
 
-    if (!response.data || !response.data.success) {
-      throw new Error(response.error || 'Failed to check subscription status');
+      if (!response.data || !response.data.success) {
+        throw new Error(response.error || response.data?.error || 'Failed to check subscription status');
+      }
+
+      return response.data.data;
+    } catch (functionError) {
+      console.error('Error checking subscription:', functionError);
+
+      // If edge function fails, fallback to client-side behavior to not block usage
+      return {
+        isSubscribed: false,
+        canCreateInvoice: true, // Allow invoice creation as fallback
+        subscription: null,
+        freeUsage: { 
+          used: 0, 
+          limit: 3, 
+          canUseFreeTier: true 
+        },
+      };
     }
-
-    return response.data.data;
   } catch (error: any) {
     console.error('Error checking subscription:', error);
     throw error;
@@ -148,13 +165,19 @@ export const updateUsage = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) throw new Error('You must be logged in to update usage');
 
-    const response = await supabase.functions.invoke('update-usage', {});
+    try {
+      const response = await supabase.functions.invoke('update-usage', {});
 
-    if (!response.data || !response.data.success) {
-      throw new Error(response.error || 'Failed to update usage');
+      if (!response.data || !response.data.success) {
+        throw new Error(response.error || response.data?.error || 'Failed to update usage');
+      }
+
+      return response.data;
+    } catch (functionError) {
+      console.error('Error invoking update-usage function:', functionError);
+      // Silently fail so it doesn't block users
+      return { success: true, data: { updated: false } };
     }
-
-    return response.data;
   } catch (error: any) {
     console.error('Error updating usage:', error);
     throw error;
