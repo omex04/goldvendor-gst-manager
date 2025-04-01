@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import Login from './pages/Login';
@@ -123,98 +123,96 @@ function App() {
         <SubscriptionProvider>
           <SettingsProvider>
             <QueryClientProvider client={queryClient}>
-              <Router>
-                <Routes>
-                  {/* Landing and Public Pages */}
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/about" element={<AboutUs />} />
-                  <Route path="/contact" element={<ContactUs />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/terms" element={<TermsConditions />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  
-                  {/* Auth Pages */}
-                  <Route
-                    path="/login"
-                    element={
-                      <AuthRoute>
-                        <Login />
-                      </AuthRoute>
-                    }
-                  />
-                  <Route
-                    path="/register"
-                    element={
-                      <AuthRoute>
-                        <Register />
-                      </AuthRoute>
-                    }
-                  />
-                  
-                  {/* Subscription Pages */}
-                  <Route
-                    path="/subscription/success"
-                    element={
-                      <PrivateRoute>
-                        <SubscriptionSuccess />
-                      </PrivateRoute>
-                    }
-                  />
-                  
-                  {/* Protected Application Pages */}
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <PrivateRoute>
-                        <MainLayout>
-                          <Dashboard />
-                        </MainLayout>
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/invoice-history"
-                    element={
-                      <PrivateRoute>
-                        <MainLayout>
-                          <InvoiceHistory />
-                        </MainLayout>
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/create-invoice"
-                    element={
-                      <PrivateRoute>
-                        <MainLayout>
-                          <CreateInvoice />
-                        </MainLayout>
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/view-invoice/:id"
-                    element={
-                      <PrivateRoute>
-                        <ViewInvoice />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <PrivateRoute>
-                        <MainLayout>
-                          <Settings />
-                        </MainLayout>
-                      </PrivateRoute>
-                    }
-                  />
-                  
-                  {/* Fallback Route */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Router>
+              <Routes>
+                {/* Landing and Public Pages */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/about" element={<AboutUs />} />
+                <Route path="/contact" element={<ContactUs />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsConditions />} />
+                <Route path="/pricing" element={<Pricing />} />
+                
+                {/* Auth Pages */}
+                <Route
+                  path="/login"
+                  element={
+                    <AuthRoute>
+                      <Login />
+                    </AuthRoute>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <AuthRoute>
+                      <Register />
+                    </AuthRoute>
+                  }
+                />
+                
+                {/* Subscription Pages */}
+                <Route
+                  path="/subscription/success"
+                  element={
+                    <PrivateRoute>
+                      <SubscriptionSuccess />
+                    </PrivateRoute>
+                  }
+                />
+                
+                {/* Protected Application Pages */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <Dashboard />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/invoice-history"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <InvoiceHistory />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/create-invoice"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <CreateInvoice />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/view-invoice/:id"
+                  element={
+                    <PrivateRoute>
+                      <ViewInvoice />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <Settings />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                
+                {/* Fallback Route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
               <Toaster />
             </QueryClientProvider>
           </SettingsProvider>
