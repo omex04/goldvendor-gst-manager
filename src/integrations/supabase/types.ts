@@ -9,7 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      invoice_usage: {
+        Row: {
+          created_at: string
+          free_invoices_used: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          free_invoices_used?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          free_invoices_used?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_count: number | null
+          invoice_limit: number | null
+          payment_id: string | null
+          plan_id: string
+          status: string
+          updated_at: string
+          user_id: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_count?: number | null
+          invoice_limit?: number | null
+          payment_id?: string | null
+          plan_id: string
+          status: string
+          updated_at?: string
+          user_id: string
+          valid_until: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_count?: number | null
+          invoice_limit?: number | null
+          payment_id?: string | null
+          plan_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
