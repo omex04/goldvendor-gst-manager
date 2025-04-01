@@ -18,7 +18,11 @@ import { saveInvoice } from '@/services/invoiceService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSettings } from '@/context/SettingsContext';
 
-export function InvoiceForm() {
+interface InvoiceFormProps {
+  onInvoiceCreated?: () => Promise<void>;
+}
+
+export function InvoiceForm({ onInvoiceCreated }: InvoiceFormProps) {
   const navigate = useNavigate();
   const { settings, isLoading: settingsLoading } = useSettings();
   const goldRates = useGoldGSTRates();
@@ -49,8 +53,11 @@ export function InvoiceForm() {
   
   const saveInvoiceMutation = useMutation({
     mutationFn: saveInvoice,
-    onSuccess: (invoiceId) => {
+    onSuccess: async (invoiceId) => {
       toast.success('Invoice saved successfully');
+      if (onInvoiceCreated) {
+        await onInvoiceCreated();
+      }
       navigate(`/view-invoice/${invoiceId}`);
     },
     onError: (error) => {
