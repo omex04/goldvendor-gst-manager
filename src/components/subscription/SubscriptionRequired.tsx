@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -12,8 +12,13 @@ interface SubscriptionRequiredProps {
 }
 
 const SubscriptionRequired = ({ children }: SubscriptionRequiredProps) => {
-  const { isSubscribed, canCreateInvoice, freeUsage, isLoading } = useSubscription();
+  const { isSubscribed, canCreateInvoice, freeUsage, isLoading, refreshSubscription } = useSubscription();
   const navigate = useNavigate();
+
+  // Force refresh subscription status on component mount
+  useEffect(() => {
+    refreshSubscription();
+  }, []);
 
   if (isLoading) {
     return (

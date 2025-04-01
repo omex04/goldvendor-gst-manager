@@ -135,6 +135,7 @@ export const checkSubscription = async () => {
       const response = await supabase.functions.invoke('check-subscription', {});
 
       if (!response.data || !response.data.success) {
+        console.error('Subscription check failed:', response.error || response.data?.error);
         throw new Error(response.error || response.data?.error || 'Failed to check subscription status');
       }
 
@@ -142,15 +143,16 @@ export const checkSubscription = async () => {
     } catch (functionError) {
       console.error('Error checking subscription:', functionError);
 
-      // If edge function fails, fallback to client-side behavior to not block usage
+      // If edge function fails, fallback to client-side behavior but don't allow 
+      // unauthorized usage
       return {
         isSubscribed: false,
-        canCreateInvoice: true, // Allow invoice creation as fallback
+        canCreateInvoice: false, // Don't allow invoice creation as fallback
         subscription: null,
         freeUsage: { 
-          used: 0, 
+          used: 3, // Assume limit reached to prevent unauthorized usage
           limit: 3, 
-          canUseFreeTier: true 
+          canUseFreeTier: false 
         },
       };
     }
@@ -168,18 +170,25 @@ export const updateUsage = async () => {
     try {
       const response = await supabase.functions.invoke('update-usage', {});
 
-      if (!response.data || !response.data.success) {
-        throw new Error(response.error || response.data?.error || 'Failed to update usage');
+      // Check if the function returned an error due to usage limits
+      if (!response.data?.success) {
+        console.error('Error updating usage:', response.error || response.data?.error);
+        return { 
+          success: false, 
+          error: response.data?.error || 'You have reached your usage limit. Please subscribe to continue.'
+        };
       }
 
-      return response.data;
-    } catch (functionError) {
+      return { success: true, data: response.data };
+    } catch (functionError: any) {
       console.error('Error invoking update-usage function:', functionError);
-      // Silently fail so it doesn't block users
-      return { success: true, data: { updated: false } };
+      return { 
+        success: false, 
+        error: functionError.message || 'Failed to update usage. Please try again.' 
+      };
     }
   } catch (error: any) {
     console.error('Error updating usage:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 };

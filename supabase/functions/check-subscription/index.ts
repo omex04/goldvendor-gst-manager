@@ -43,22 +43,26 @@ serve(async (req: Request) => {
       throw new Error("User not found or not authenticated");
     }
 
+    console.log("Checking subscription for user:", user.id);
+
     // Check if user has an active subscription
     const { data: subscriptions, error: subError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
       .eq("status", "active")
-      .lt("valid_until", new Date().toISOString())
-      .order("created_at", { ascending: false })
+      .gte("valid_until", new Date().toISOString())
+      .order("valid_until", { ascending: false })
       .limit(1);
 
     if (subError) {
       console.error("Error fetching subscriptions:", subError);
+      throw new Error(`Failed to check subscription: ${subError.message}`);
     }
 
     const subscription = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
     const isSubscribed = !!subscription;
+    console.log("Subscription status:", isSubscribed);
 
     // Get user's free invoice usage
     let { data: usageData, error: usageError } = await supabaseClient
@@ -69,6 +73,7 @@ serve(async (req: Request) => {
 
     if (usageError && usageError.code !== "PGRST116") {
       console.error("Error fetching invoice usage:", usageError);
+      throw new Error(`Failed to check invoice usage: ${usageError.message}`);
     }
 
     // Create usage record if it doesn't exist
@@ -81,15 +86,18 @@ serve(async (req: Request) => {
 
       if (createError) {
         console.error("Error creating invoice usage:", createError);
-        throw createError;
+        throw new Error(`Failed to create invoice usage: ${createError.message}`);
       }
 
       usageData = newUsage;
     }
 
+    console.log("User free invoices used:", usageData?.free_invoices_used);
+
     // Determine if user can create invoices
     const freeUsageLimit = 3;
-    const freeUsageRemaining = freeUsageLimit - (usageData?.free_invoices_used || 0);
+    const freeUsageUsed = usageData?.free_invoices_used || 0;
+    const freeUsageRemaining = freeUsageLimit - freeUsageUsed;
     const canUseFreeTier = freeUsageRemaining > 0;
     const canCreateInvoice = isSubscribed || canUseFreeTier;
 
@@ -101,7 +109,7 @@ serve(async (req: Request) => {
           canCreateInvoice,
           subscription,
           freeUsage: {
-            used: usageData?.free_invoices_used || 0,
+            used: freeUsageUsed,
             limit: freeUsageLimit,
             canUseFreeTier,
           },

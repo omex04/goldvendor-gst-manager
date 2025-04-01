@@ -43,6 +43,8 @@ serve(async (req: Request) => {
       throw new Error("User not found or not authenticated");
     }
 
+    console.log("Updating usage for user:", user.id);
+
     // Check if user has an active subscription
     const { data: subscriptions, error: subscriptionError } = await supabaseClient
       .from("subscriptions")
@@ -61,6 +63,8 @@ serve(async (req: Request) => {
 
     // If user has an active subscription, update the invoice count
     if (activeSubscription) {
+      console.log("User has active subscription, updating invoice count");
+      
       // Check if they've hit their limit
       if (
         activeSubscription.invoice_limit !== null &&
@@ -88,6 +92,8 @@ serve(async (req: Request) => {
         throw new Error(`Failed to update subscription usage: ${updateError.message}`);
       }
     } else {
+      console.log("User doesn't have active subscription, checking free usage");
+      
       // User doesn't have an active subscription, check and update free usage
       // First check if the user has an invoice_usage entry
       const { data: usageData, error: usageError } = await supabaseClient
@@ -105,6 +111,8 @@ serve(async (req: Request) => {
 
       // If no entry exists, create one
       if (!usageData) {
+        console.log("Creating new invoice usage record");
+        
         const { error: insertError } = await supabaseClient.from("invoice_usage").insert({
           user_id: user.id,
           free_invoices_used: 1,
@@ -114,6 +122,8 @@ serve(async (req: Request) => {
           throw new Error(`Failed to create invoice usage: ${insertError.message}`);
         }
       } else {
+        console.log("Current free invoices used:", usageData.free_invoices_used);
+        
         // Check if they've hit their free limit
         if (usageData.free_invoices_used >= freeInvoicesLimit) {
           return new Response(

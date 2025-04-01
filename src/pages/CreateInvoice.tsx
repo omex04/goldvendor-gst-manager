@@ -1,22 +1,46 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { InvoiceForm } from '@/components/invoices/InvoiceForm';
 import SubscriptionRequired from '@/components/subscription/SubscriptionRequired';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { updateUsage } from '@/services/subscriptionService';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const CreateInvoice = () => {
-  const { refreshSubscription } = useSubscription();
+  const { refreshSubscription, canCreateInvoice, isSubscribed, freeUsage } = useSubscription();
+  const navigate = useNavigate();
+
+  // Check if user can create invoices on page load
+  useEffect(() => {
+    refreshSubscription();
+  }, []);
 
   const handleInvoiceCreated = async () => {
     try {
       // Update usage when an invoice is created
-      await updateUsage();
+      const response = await updateUsage();
+      
+      // Handle usage limit errors
+      if (!response.success && response.error) {
+        toast.error(response.error);
+        navigate('/pricing');
+        return;
+      }
+      
+      // Show subscription prompt when user is on their last free invoice
+      if (!isSubscribed && freeUsage.used === freeUsage.limit - 1) {
+        toast.success("Invoice created! This was your last free invoice. Please subscribe to create more.");
+      } else {
+        toast.success("Invoice created successfully!");
+      }
+      
       // Refresh subscription status
       await refreshSubscription();
     } catch (error) {
       console.error('Error updating usage:', error);
+      toast.error('Error tracking invoice usage. Please try again.');
     }
   };
 

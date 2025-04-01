@@ -47,47 +47,60 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const data = await checkSubscription();
+      
+      // Ensure we're properly setting canCreateInvoice based on subscription status
+      // or free tier availability
       setStatus({
         isSubscribed: data.isSubscribed,
-        canCreateInvoice: data.canCreateInvoice,
+        canCreateInvoice: data.isSubscribed || 
+                          (data.freeUsage && data.freeUsage.canUseFreeTier),
         subscription: data.subscription,
         freeUsage: data.freeUsage,
         isLoading: false,
       });
+      
+      // Show warning when user is close to free limit
+      if (!data.isSubscribed && data.freeUsage && 
+          data.freeUsage.used === 2 && data.freeUsage.limit === 3) {
+        toast.warning("You have 1 free invoice remaining. Subscribe to create unlimited invoices.");
+      }
     } catch (error) {
       console.error('Failed to check subscription status:', error);
-      // Set default values that allow usage when there's an error checking subscription
+      // Set restrictive default values when there's an error checking subscription
+      // to prevent unauthorized access
       setStatus({
         isSubscribed: false,
-        canCreateInvoice: true, // Allow invoice creation even on error to prevent blocking users
+        canCreateInvoice: false, // Don't allow invoice creation on error
         subscription: null,
         freeUsage: {
           used: 0,
           limit: 3,
-          canUseFreeTier: true,
+          canUseFreeTier: false,
         },
         isLoading: false,
       });
       
-      // Only show toast error in development
-      if (import.meta.env.DEV) {
-        toast.error('Subscription check failed. Using free tier as fallback.');
-      }
+      toast.error('Unable to verify subscription status. Please try again later.');
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Clear subscription status when authentication state changes
+    if (!isAuthenticated) {
+      setStatus({
+        ...defaultStatus,
+        isLoading: false,
+      });
+    }
+  }, [isAuthenticated]);
+  
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
       // Small delay to ensure auth is fully processed
       const timer = setTimeout(() => {
         refreshSubscription();
       }, 500);
       return () => clearTimeout(timer);
-    } else {
-      setStatus({
-        ...defaultStatus,
-        isLoading: false,
-      });
     }
   }, [isAuthenticated, user?.id]);
 
