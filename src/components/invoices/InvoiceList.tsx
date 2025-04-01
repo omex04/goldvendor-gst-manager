@@ -17,6 +17,7 @@ import { DateRange } from 'react-day-picker';
 import { fetchInvoices } from '@/services/invoiceService';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import SubscriptionStatus from '@/components/subscription/SubscriptionStatus';
 
 const statusColors = {
   draft: "bg-gray-100 text-gray-800",
@@ -78,7 +79,10 @@ export function InvoiceList() {
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <CardTitle>Invoices</CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle>Invoices</CardTitle>
+              <SubscriptionStatus />
+            </div>
             <CardDescription>
               Manage and track all your invoices
             </CardDescription>

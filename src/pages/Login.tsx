@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { signIn, getSession } from '@/lib/localAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
@@ -21,8 +21,8 @@ const Login = () => {
   useEffect(() => {
     // Check if already authenticated
     const checkAuth = async () => {
-      const session = getSession();
-      if (session) {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
         navigate('/dashboard');
       }
     };
@@ -41,17 +41,18 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const { success, error } = await signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      if (success) {
-        await refreshUser(); // Update auth context
-        toast.success('Login successful');
-        navigate('/dashboard');
-      } else {
-        toast.error(error || 'Login failed. Please check your credentials.');
-      }
+      if (error) throw error;
+      
+      await refreshUser(); // Update auth context
+      toast.success('Login successful');
+      navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.message || 'Login failed. Please try again later.');
+      toast.error(error.message || 'Login failed. Please check your credentials.');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -67,16 +68,9 @@ const Login = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gold-600 dark:text-gold-500">Gold GST Manager</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">Login to your account</p>
-            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900 rounded-md">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Default credentials:</strong><br />
-                Email: admin@goldgst.com<br />
-                Password: gold123
-              </p>
-            </div>
           </div>
           
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="dark:bg-gray-800 dark:border-gray-700 transition-all hover:shadow-md">
             <CardHeader>
               <CardTitle className="dark:text-white">Login</CardTitle>
               <CardDescription className="dark:text-gray-400">
@@ -94,7 +88,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                   />
                 </div>
                 <div className="space-y-2">
@@ -108,20 +102,20 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                   />
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-4">
                 <Button 
                   type="submit" 
-                  className="w-full bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700" 
+                  className="w-full bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-black transition-colors" 
                   disabled={isLoading}
                 >
                   {isLoading ? 'Logging in...' : 'Log in'}
                 </Button>
                 <div className="text-center w-full">
-                  <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gold-600 dark:hover:text-gold-500">
+                  <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gold-600 dark:hover:text-gold-500 transition-colors">
                     Back to home
                   </Link>
                 </div>

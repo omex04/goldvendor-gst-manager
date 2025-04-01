@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SubscriptionProvider } from './context/SubscriptionContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import MainLayout from './components/layout/MainLayout';
@@ -15,11 +16,13 @@ import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
+import Pricing from './pages/Pricing';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './components/ui/theme-provider';
-import { checkAuthConnection } from './lib/localAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -42,8 +45,21 @@ function App() {
       }
     };
     
-    const connectionStatus = checkAuthConnection() && initializeLocalStorage();
-    setIsConnected(connectionStatus);
+    const checkSupabaseConnection = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        return true;
+      } catch (error) {
+        console.error("Supabase connection error:", error);
+        return true; // Return true anyway to allow app to load
+      }
+    };
+
+    Promise.all([checkSupabaseConnection(), initializeLocalStorage()])
+      .then(([supabaseConnected, localStorageConnected]) => {
+        setIsConnected(supabaseConnected && localStorageConnected);
+      });
   }, []);
 
   const AuthRoute = ({ children }: { children: React.ReactNode }) => {
@@ -71,7 +87,7 @@ function App() {
       );
     }
     
-    return isAuthenticated ? children : <Navigate to="/" replace />;
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
   };
 
   if (isConnected === null) {
@@ -104,92 +120,105 @@ function App() {
   return (
     <ThemeProvider defaultTheme={storedTheme as "dark" | "light" | "system"}>
       <AuthProvider>
-        <SettingsProvider>
-          <QueryClientProvider client={queryClient}>
-            <Router>
-              <Routes>
-                {/* Landing and Public Pages */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/about" element={<AboutUs />} />
-                <Route path="/contact" element={<ContactUs />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsConditions />} />
-                
-                {/* Auth Pages */}
-                <Route
-                  path="/login"
-                  element={
-                    <AuthRoute>
-                      <Login />
-                    </AuthRoute>
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={
-                    <AuthRoute>
-                      <Register />
-                    </AuthRoute>
-                  }
-                />
-                
-                {/* Protected Application Pages */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <PrivateRoute>
-                      <MainLayout>
-                        <Dashboard />
-                      </MainLayout>
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/invoice-history"
-                  element={
-                    <PrivateRoute>
-                      <MainLayout>
-                        <InvoiceHistory />
-                      </MainLayout>
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/create-invoice"
-                  element={
-                    <PrivateRoute>
-                      <MainLayout>
-                        <CreateInvoice />
-                      </MainLayout>
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/view-invoice/:id"
-                  element={
-                    <PrivateRoute>
-                      <ViewInvoice />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <PrivateRoute>
-                      <MainLayout>
-                        <Settings />
-                      </MainLayout>
-                    </PrivateRoute>
-                  }
-                />
-                
-                {/* Fallback Route */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Router>
-            <Toaster />
-          </QueryClientProvider>
-        </SettingsProvider>
+        <SubscriptionProvider>
+          <SettingsProvider>
+            <QueryClientProvider client={queryClient}>
+              <Router>
+                <Routes>
+                  {/* Landing and Public Pages */}
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/about" element={<AboutUs />} />
+                  <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsConditions />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  
+                  {/* Auth Pages */}
+                  <Route
+                    path="/login"
+                    element={
+                      <AuthRoute>
+                        <Login />
+                      </AuthRoute>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <AuthRoute>
+                        <Register />
+                      </AuthRoute>
+                    }
+                  />
+                  
+                  {/* Subscription Pages */}
+                  <Route
+                    path="/subscription/success"
+                    element={
+                      <PrivateRoute>
+                        <SubscriptionSuccess />
+                      </PrivateRoute>
+                    }
+                  />
+                  
+                  {/* Protected Application Pages */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <PrivateRoute>
+                        <MainLayout>
+                          <Dashboard />
+                        </MainLayout>
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/invoice-history"
+                    element={
+                      <PrivateRoute>
+                        <MainLayout>
+                          <InvoiceHistory />
+                        </MainLayout>
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/create-invoice"
+                    element={
+                      <PrivateRoute>
+                        <MainLayout>
+                          <CreateInvoice />
+                        </MainLayout>
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/view-invoice/:id"
+                    element={
+                      <PrivateRoute>
+                        <ViewInvoice />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <PrivateRoute>
+                        <MainLayout>
+                          <Settings />
+                        </MainLayout>
+                      </PrivateRoute>
+                    }
+                  />
+                  
+                  {/* Fallback Route */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Router>
+              <Toaster />
+            </QueryClientProvider>
+          </SettingsProvider>
+        </SubscriptionProvider>
       </AuthProvider>
     </ThemeProvider>
   );
