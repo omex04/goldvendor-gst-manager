@@ -48,8 +48,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     try {
       const data = await checkSubscription();
       
-      // Ensure we're properly setting canCreateInvoice based on subscription status
-      // or free tier availability
+      // Update subscription status based on response from edge function
       setStatus({
         isSubscribed: data.isSubscribed,
         canCreateInvoice: data.isSubscribed || 

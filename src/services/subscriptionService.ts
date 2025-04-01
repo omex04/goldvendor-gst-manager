@@ -62,6 +62,8 @@ export const createSubscription = async (planId: string) => {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) throw new Error('You must be logged in to subscribe');
 
+    console.log('Creating subscription for plan:', plan.id);
+    
     const response = await supabase.functions.invoke('create-subscription', {
       body: {
         planId: plan.id,
@@ -71,8 +73,12 @@ export const createSubscription = async (planId: string) => {
       },
     });
 
+    console.log('Response from create-subscription:', response);
+
     if (!response.data || !response.data.success) {
-      throw new Error(response.error || response.data?.error || 'Failed to create subscription');
+      const errorMessage = response.error || (response.data && response.data.error) || 'Failed to create subscription';
+      console.error('Subscription creation error:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     return response.data.data;
@@ -132,7 +138,9 @@ export const checkSubscription = async () => {
 
     // Try to call the edge function
     try {
+      console.log('Checking subscription status...');
       const response = await supabase.functions.invoke('check-subscription', {});
+      console.log('Subscription check response:', response);
 
       if (!response.data || !response.data.success) {
         console.error('Subscription check failed:', response.error || response.data?.error);
@@ -168,7 +176,9 @@ export const updateUsage = async () => {
     if (!sessionData.session) throw new Error('You must be logged in to update usage');
 
     try {
+      console.log('Updating usage...');
       const response = await supabase.functions.invoke('update-usage', {});
+      console.log('Update usage response:', response);
 
       // Check if the function returned an error due to usage limits
       if (!response.data?.success) {

@@ -76,8 +76,9 @@ serve(async (req: Request) => {
       throw new Error(`Failed to check invoice usage: ${usageError.message}`);
     }
 
-    // Create usage record if it doesn't exist
+    // Create usage record if it doesn't exist - this is critical for new users
     if (!usageData) {
+      console.log("No usage record found for user, creating new record with 0 usage");
       const { data: newUsage, error: createError } = await supabaseClient
         .from("invoice_usage")
         .insert({ user_id: user.id, free_invoices_used: 0 })
@@ -99,6 +100,10 @@ serve(async (req: Request) => {
     const freeUsageUsed = usageData?.free_invoices_used || 0;
     const freeUsageRemaining = freeUsageLimit - freeUsageUsed;
     const canUseFreeTier = freeUsageRemaining > 0;
+    
+    // This is the key change - a user can create an invoice if:
+    // 1. They have an active subscription, OR
+    // 2. They have free invoices remaining
     const canCreateInvoice = isSubscribed || canUseFreeTier;
 
     return new Response(
