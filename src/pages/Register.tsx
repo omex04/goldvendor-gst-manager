@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
-import { supabase } from '@/integrations/supabase/client';
+import { signUp } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,49 +38,21 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Keep registration process simple - avoid setting metadata that could cause issues
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
+      // Simple registration - only using required fields
+      const result = await signUp(email, password, { 
+        name: fullName,
+        businessName: businessName || '' 
       });
       
-      if (error) throw error;
-      
-      if (data.user && !data.user.identities?.length) {
-        toast.error('This email is already registered. Please log in instead.');
-        navigate('/login');
-        return;
+      if (!result.success) {
+        throw new Error(result.error || 'Registration failed');
       }
       
-      toast.success('Registration successful! Please check your email for confirmation.');
-      
-      // After successful registration, update the user's metadata separately
-      if (data.user) {
-        try {
-          // Update user metadata
-          await supabase.auth.updateUser({
-            data: {
-              full_name: fullName,
-              business_name: businessName || null
-            }
-          });
-          
-          // Ensure the invoice_usage record exists
-          await supabase.from('invoice_usage').insert({
-            user_id: data.user.id,
-            free_invoices_used: 0
-          }).select();
-          
-        } catch (metadataError) {
-          console.error('Error updating user data:', metadataError);
-          // This is non-blocking - the user is still created
-        }
-      }
-      
+      toast.success('Registration successful! You can now log in.');
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.message || 'Registration failed. Please try again later.');
       console.error('Registration error:', error);
+      toast.error(error.message || 'Registration failed. Please try again later.');
     } finally {
       setIsLoading(false);
     }

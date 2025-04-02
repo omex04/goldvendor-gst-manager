@@ -45,20 +45,50 @@ export const signIn = async (email: string, password: string) => {
   }
 };
 
-export const signUp = async (email: string, password: string, userData: { name: string }) => {
+export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
+    // First, create the user with minimal metadata to avoid database errors
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: userData,
-      },
+        data: {
+          full_name: userData.name
+        },
+      }
     });
 
     if (error) throw error;
+    
+    if (data.user && !data.user.identities?.length) {
+      return { success: false, error: 'This email is already registered. Please log in instead.' };
+    }
+    
+    // Initialize invoice usage for the new user
+    if (data.user) {
+      try {
+        await supabase.from('invoice_usage').insert({
+          user_id: data.user.id,
+          free_invoices_used: 0
+        }).select();
+      } catch (usageError) {
+        console.log('Could not initialize invoice usage, will be created later:', usageError);
+        // Non-blocking error, continue with signup
+      }
+      
+      // Update user metadata with additional data
+      if (userData.businessName) {
+        await supabase.auth.updateUser({
+          data: {
+            business_name: userData.businessName
+          }
+        });
+      }
+    }
+    
     return { success: true, data };
   } catch (error: any) {
-    console.error('Registration error:', error.message);
+    console.error('Registration error:', error);
     return { success: false, error: error.message };
   }
 };
