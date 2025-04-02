@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import TypewriterText from '@/components/ui/TypewriterText';
 
 const HeroSection = () => {
+  const [showSubtext, setShowSubtext] = useState(false);
+
   return (
     <section className="relative py-16 md:py-24 overflow-hidden">
       {/* Background pattern */}
@@ -13,16 +16,28 @@ const HeroSection = () => {
         <div className="flex flex-col lg:flex-row items-center">
           <div className="lg:w-1/2 mb-12 lg:mb-0">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 dark:text-white">
-              <span className="text-gold-500">GST Invoices</span> Made Simple for Gold Vendors
+              <span className="text-gold-500">
+                <TypewriterText 
+                  text="GST Invoices" 
+                  speed={80} 
+                  onComplete={() => setShowSubtext(true)}
+                />
+              </span>
+              {showSubtext && (
+                <TypewriterText 
+                  text=" Made Simple for Gold Vendors" 
+                  speed={60}
+                />
+              )}
             </h1>
-            <p className="text-lg md:text-xl mb-8 text-gray-600 dark:text-gray-300 max-w-xl">
+            <p className="text-lg md:text-xl mb-8 text-gray-600 dark:text-gray-300 max-w-xl animate-fade-in">
               Create professional GST invoices in minutes. Start with 3 free invoices, no credit card required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 asChild
                 size="lg" 
-                className="bg-gold-500 hover:bg-gold-600 text-black dark:bg-gold-600 dark:hover:bg-gold-700"
+                className="bg-gold-500 hover:bg-gold-600 text-black dark:bg-gold-600 dark:hover:bg-gold-700 transform transition-transform hover:scale-105"
               >
                 <Link to="/register">Start Free Trial</Link>
               </Button>
@@ -30,7 +45,7 @@ const HeroSection = () => {
                 asChild
                 size="lg" 
                 variant="outline" 
-                className="dark:border-gray-700 dark:text-gray-300"
+                className="dark:border-gray-700 dark:text-gray-300 transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <a href="#pricing">View Pricing</a>
               </Button>
@@ -41,7 +56,7 @@ const HeroSection = () => {
           </div>
           
           <div className="lg:w-1/2 lg:pl-12">
-            <div className="relative rounded-lg overflow-hidden shadow-xl">
+            <div className="relative rounded-lg overflow-hidden shadow-xl transition-all hover:shadow-2xl transform hover:-translate-y-1">
               <div className="bg-gray-900 p-2 rounded-t-lg flex items-center">
                 <div className="flex space-x-2">
                   <div className="h-3 w-3 rounded-full bg-red-500"></div>

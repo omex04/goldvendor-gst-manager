@@ -101,7 +101,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       // Increased delay to ensure auth is fully processed
       const timer = setTimeout(() => {
         refreshSubscription();
-      }, 800);
+      }, 1000); // Further increased delay to 1000ms
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, user?.id]);

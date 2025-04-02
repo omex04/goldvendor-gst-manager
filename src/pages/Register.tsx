@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,16 +37,10 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Simplify the user data to avoid potential issues
+      // Keep registration process simple - avoid setting metadata that could cause issues
       const { data, error } = await supabase.auth.signUp({
         email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            business_name: businessName || null
-          }
-        }
+        password
       });
       
       if (error) throw error;
@@ -60,16 +53,26 @@ const Register = () => {
       
       toast.success('Registration successful! Please check your email for confirmation.');
       
-      // Initialize invoice usage for the new user
+      // After successful registration, update the user's metadata separately
       if (data.user) {
         try {
+          // Update user metadata
+          await supabase.auth.updateUser({
+            data: {
+              full_name: fullName,
+              business_name: businessName || null
+            }
+          });
+          
+          // Ensure the invoice_usage record exists
           await supabase.from('invoice_usage').insert({
             user_id: data.user.id,
             free_invoices_used: 0
-          });
-        } catch (usageError) {
-          console.error('Error initializing invoice usage:', usageError);
-          // Continue despite this error since the trigger should handle it
+          }).select();
+          
+        } catch (metadataError) {
+          console.error('Error updating user data:', metadataError);
+          // This is non-blocking - the user is still created
         }
       }
       

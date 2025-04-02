@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { Check, FileText, Shield, TrendingUp, Settings, Clock } from 'lucide-rea
 import LandingFooter from '@/components/landing/LandingFooter';
 import LandingHeader from '@/components/landing/LandingHeader';
 import HeroSection from '@/components/landing/HeroSection';
+import TestimonialCarousel from '@/components/landing/TestimonialCarousel';
 
 const LandingPage = () => {
   const features = [
@@ -85,6 +86,32 @@ const LandingPage = () => {
     },
   ];
 
+  // Function to handle scroll animations
+  useEffect(() => {
+    const handleScroll = () => {
+      const elements = document.querySelectorAll('.scroll-animate');
+      
+      elements.forEach(element => {
+        const elementTop = element.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        
+        if (elementTop < windowHeight * 0.85) {
+          element.classList.add('animate-fade-in');
+          element.classList.remove('opacity-0');
+        }
+      });
+    };
+    
+    // Initial check on load
+    handleScroll();
+    
+    // Add scroll listener
+    window.addEventListener('scroll', handleScroll);
+    
+    // Cleanup
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen dark:bg-gray-900">
       <LandingHeader />
@@ -95,7 +122,7 @@ const LandingPage = () => {
       {/* Features Section */}
       <section className="py-16 px-4 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 scroll-animate opacity-0 transform translate-y-4">
             <h2 className="text-3xl font-bold mb-4 dark:text-white">Why Choose Gold GST Manager?</h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Our specialized platform is designed specifically for gold vendors, making GST invoicing simple, accurate, and cost-effective.
@@ -104,7 +131,11 @@ const LandingPage = () => {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="border border-gray-200 dark:border-gray-700 dark:bg-gray-800">
+              <Card 
+                key={index} 
+                className="border border-gray-200 dark:border-gray-700 dark:bg-gray-800 scroll-animate opacity-0 transform translate-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-2"
+                style={{ transitionDelay: `${index * 100}ms` }}
+              >
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-gold-100 dark:bg-gold-900/20 flex items-center justify-center mb-4">
                     <feature.icon className="h-6 w-6 text-gold-500" />
@@ -130,7 +161,7 @@ const LandingPage = () => {
           <Button 
             asChild
             size="lg" 
-            className="bg-black text-white hover:bg-gray-800 dark:bg-gray-900 dark:text-gold-500 dark:hover:bg-gray-800"
+            className="bg-black text-white hover:bg-gray-800 dark:bg-gray-900 dark:text-gold-500 dark:hover:bg-gray-800 transform transition-transform hover:scale-105"
           >
             <Link to="/register">Start Your Free Trial</Link>
           </Button>
@@ -140,7 +171,7 @@ const LandingPage = () => {
       {/* Pricing Section */}
       <section id="pricing" className="py-16 px-4 dark:bg-gray-900">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 scroll-animate opacity-0 transform translate-y-4">
             <h2 className="text-3xl font-bold mb-4 dark:text-white">Simple, Transparent Pricing</h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Choose the plan that works best for your gold jewelry business needs.
@@ -152,7 +183,8 @@ const LandingPage = () => {
               <Card 
                 key={index} 
                 className={`border ${plan.highlight ? 'border-gold-500 shadow-lg dark:border-gold-600' : 'border-gray-200 dark:border-gray-700'} 
-                relative dark:bg-gray-800 h-full flex flex-col`}
+                relative dark:bg-gray-800 h-full flex flex-col scroll-animate opacity-0 transform translate-y-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-2`}
+                style={{ transitionDelay: `${index * 100}ms` }}
               >
                 {plan.highlight && (
                   <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gold-500 text-black px-4 py-1 rounded-full text-sm font-medium">
@@ -180,7 +212,7 @@ const LandingPage = () => {
                 <CardFooter>
                   <Button 
                     asChild
-                    className={`w-full ${plan.highlight 
+                    className={`w-full transition-all duration-300 hover:shadow-md ${plan.highlight 
                       ? 'bg-gold-500 hover:bg-gold-600 text-black dark:bg-gold-600 dark:hover:bg-gold-700' 
                       : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white'}`}
                   >
@@ -196,55 +228,15 @@ const LandingPage = () => {
       {/* Testimonials Section */}
       <section className="py-16 px-4 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 scroll-animate opacity-0 transform translate-y-4">
             <h2 className="text-3xl font-bold mb-4 dark:text-white">Trusted by Gold Vendors</h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Here's what our customers say about Gold GST Manager
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardContent className="pt-6">
-                <p className="italic text-gray-600 dark:text-gray-300">
-                  "Gold GST Manager has simplified our invoicing process. We've saved hours each week on paperwork."
-                </p>
-                <div className="mt-6 flex items-center">
-                  <div className="ml-4">
-                    <p className="font-medium dark:text-white">Rajesh Jewelers</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Mumbai</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardContent className="pt-6">
-                <p className="italic text-gray-600 dark:text-gray-300">
-                  "The GST calculations are always accurate, and customer support is excellent. Highly recommended."
-                </p>
-                <div className="mt-6 flex items-center">
-                  <div className="ml-4">
-                    <p className="font-medium dark:text-white">Golden Touch Emporium</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Delhi</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardContent className="pt-6">
-                <p className="italic text-gray-600 dark:text-gray-300">
-                  "As a small business, the affordable pricing and professional invoices have helped us look more established."
-                </p>
-                <div className="mt-6 flex items-center">
-                  <div className="ml-4">
-                    <p className="font-medium dark:text-white">Sunshine Jewelry</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Bangalore</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="scroll-animate opacity-0 transform translate-y-4">
+            <TestimonialCarousel />
           </div>
         </div>
       </section>
@@ -252,7 +244,7 @@ const LandingPage = () => {
       {/* CTA Section */}
       <section className="py-16 px-4 dark:bg-gray-900">
         <div className="container mx-auto text-center">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto scroll-animate opacity-0 transform translate-y-4">
             <h2 className="text-3xl font-bold mb-4 dark:text-white">Ready to Streamline Your GST Invoicing?</h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
               Join thousands of gold vendors who save time and ensure compliance with Gold GST Manager.
@@ -261,7 +253,7 @@ const LandingPage = () => {
               <Button 
                 asChild
                 size="lg" 
-                className="bg-gold-500 hover:bg-gold-600 text-black dark:bg-gold-600 dark:hover:bg-gold-700"
+                className="bg-gold-500 hover:bg-gold-600 text-black dark:bg-gold-600 dark:hover:bg-gold-700 transform transition-transform hover:scale-105"
               >
                 <Link to="/register">Start Free Trial</Link>
               </Button>
@@ -269,7 +261,7 @@ const LandingPage = () => {
                 asChild
                 size="lg" 
                 variant="outline" 
-                className="dark:border-gray-700 dark:text-gray-300"
+                className="dark:border-gray-700 dark:text-gray-300 transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <Link to="/login">Log In</Link>
               </Button>
