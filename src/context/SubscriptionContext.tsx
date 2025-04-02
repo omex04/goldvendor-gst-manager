@@ -46,7 +46,10 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      console.log("Refreshing subscription status for user:", user.id);
       const data = await checkSubscription();
+      
+      console.log("Subscription data received:", JSON.stringify(data));
       
       // Update subscription status based on response from edge function
       setStatus({

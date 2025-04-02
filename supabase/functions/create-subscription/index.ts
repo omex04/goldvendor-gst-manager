@@ -14,19 +14,17 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Get the authorization header
+    // Get request body
+    const { planId, planName, amount, currency } = await req.json();
+    
+    if (!planId || !amount || !currency) {
+      throw new Error("Missing required fields: planId, amount, or currency");
+    }
+
+    // Get authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "No authorization header",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 401,
-        }
-      );
+      throw new Error("No authorization header");
     }
 
     // Create Supabase client
@@ -42,150 +40,85 @@ serve(async (req: Request) => {
       }
     );
 
-    // Get the current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "User not found or not authenticated",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 401,
-        }
-      );
+    // Get current user
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !userData.user) {
+      throw new Error("User not found or not authenticated");
     }
 
-    // Get plan details from request body
-    let body;
-    try {
-      body = await req.json();
-    } catch (e) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Invalid request body",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        }
-      );
+    const user = userData.user;
+    console.log("Creating subscription for user:", user.id, "with plan:", planId);
+
+    // Load Razorpay keys
+    const keyId = Deno.env.get("RAZORPAY_KEY_ID");
+    const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+
+    if (!keyId || !keySecret) {
+      throw new Error("Razorpay API keys not configured");
     }
 
-    const { planId, planName, amount, currency = "INR" } = body;
-
-    if (!planId || !amount) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Missing required parameters: planId, amount",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        }
-      );
-    }
-
-    console.log(`Creating subscription for user ${user.id}, plan ${planId}, amount ${amount} ${currency}`);
-
-    // Get Razorpay Key ID from environment
-    const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID");
-    if (!RAZORPAY_KEY_ID) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Razorpay key not configured",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        }
-      );
-    }
+    // Generate a unique order ID
+    const orderId = crypto.randomUUID();
 
     // Create Razorpay order
-    try {
-      const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
-      
-      // Create the authorization header for Razorpay
-      const credentials = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
-      
-      const razorpayResponse = await fetch("https://api.razorpay.com/v1/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Basic ${credentials}`,
-        },
-        body: JSON.stringify({
-          amount: amount * 100, // Razorpay expects amount in paise
-          currency: currency,
-          receipt: `receipt_${user.id}_${Date.now()}`,
-          notes: {
-            planId: planId,
-            userId: user.id,
-          },
-        }),
-      });
-      
-      // Check if the response is ok
-      if (!razorpayResponse.ok) {
-        const errorData = await razorpayResponse.json();
-        console.error("Razorpay error:", errorData);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Razorpay error: ${errorData.error?.description || "Unknown error"}`,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 500,
-          }
-        );
-      }
-      
-      const orderData = await razorpayResponse.json();
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            orderId: orderData.id,
-            amount: orderData.amount / 100, // Convert back to rupees
-            currency: orderData.currency,
-            keyId: RAZORPAY_KEY_ID,
-          },
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
-    } catch (error) {
-      console.error("Error creating Razorpay order:", error);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `Failed to create payment order: ${error.message}`,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        }
-      );
+    const orderData = {
+      amount: amount * 100, // Convert to paise (Razorpay uses smallest currency unit)
+      currency: currency,
+      receipt: `order_${orderId}`,
+      notes: {
+        planId: planId,
+        userId: user.id,
+        userEmail: user.email,
+      },
+    };
+
+    console.log("Creating Razorpay order with data:", JSON.stringify(orderData));
+
+    // Create Authorization header for Razorpay API
+    const auth = btoa(`${keyId}:${keySecret}`);
+
+    // Create Razorpay order using fetch
+    const razorpayResponse = await fetch("https://api.razorpay.com/v1/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${auth}`,
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    if (!razorpayResponse.ok) {
+      const errorData = await razorpayResponse.json();
+      console.error("Razorpay API error:", errorData);
+      throw new Error(`Razorpay API error: ${JSON.stringify(errorData)}`);
     }
+
+    const razorpayOrder = await razorpayResponse.json();
+    console.log("Razorpay order created:", razorpayOrder);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: {
+          order_id: razorpayOrder.id,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          key_id: keyId,
+          planId: planId,
+          planName: planName,
+        },
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
   } catch (error) {
     console.error("Error creating subscription:", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: error.message || "Failed to create subscription",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

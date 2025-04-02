@@ -76,11 +76,56 @@ export const createSubscription = async (planId: string) => {
     console.log('Response from create-subscription:', response);
 
     if (!response.data || !response.data.success) {
-      const errorMessage = response.error || (response.data && response.data.error) || 'Failed to create subscription';
+      const errorMessage = (response.error || (response.data && response.data.error) || 'Failed to create subscription');
       console.error('Subscription creation error:', errorMessage);
       throw new Error(errorMessage);
     }
 
+    // Initialize Razorpay for payment
+    if (typeof window.Razorpay === 'undefined') {
+      throw new Error('Razorpay SDK not loaded');
+    }
+
+    const options = {
+      key: response.data.data.key_id,
+      amount: response.data.data.amount,
+      currency: response.data.data.currency,
+      name: "Gold GST Manager",
+      description: `Subscription for ${plan.name}`,
+      order_id: response.data.data.order_id,
+      handler: function (response: any) {
+        console.log('Payment successful:', response);
+        // Verify payment using the verify-payment function
+        verifyPayment({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+          planId: plan.id
+        }).then(verificationResult => {
+          console.log('Payment verification result:', verificationResult);
+          window.location.href = '/subscription/success';
+        }).catch(err => {
+          console.error('Payment verification error:', err);
+          toast.error('Payment verification failed');
+        });
+      },
+      prefill: {
+        email: sessionData.session.user.email || '',
+      },
+      theme: {
+        color: "#c8a951", // Gold color for branding
+      },
+      modal: {
+        ondismiss: function() {
+          console.log('Payment canceled by user');
+          toast.info('Payment canceled');
+        }
+      }
+    };
+
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+    
     return response.data.data;
   } catch (error: any) {
     console.error('Error creating subscription:', error);
@@ -202,3 +247,10 @@ export const updateUsage = async () => {
     return { success: false, error: error.message };
   }
 };
+
+// Add Razorpay type definition
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
