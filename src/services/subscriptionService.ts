@@ -187,25 +187,30 @@ export const checkSubscription = async () => {
       const response = await supabase.functions.invoke('check-subscription', {});
       console.log('Subscription check response:', response);
 
-      if (!response.data || !response.data.success) {
-        console.error('Subscription check failed:', response.error || response.data?.error);
-        throw new Error(response.error || response.data?.error || 'Failed to check subscription status');
+      if (!response.data) {
+        console.error('Subscription check failed:', response.error);
+        throw new Error(response.error || 'Failed to check subscription status');
       }
 
-      return response.data.data;
+      return {
+        isSubscribed: response.data.isSubscribed,
+        canCreateInvoice: response.data.canCreateInvoice,
+        subscription: response.data.subscription,
+        freeUsage: response.data.freeUsage,
+      };
     } catch (functionError) {
       console.error('Error checking subscription:', functionError);
 
-      // If edge function fails, fallback to client-side behavior but don't allow 
-      // unauthorized usage
+      // If edge function fails, fallback to allowing free tier usage
+      // to prevent blocking new users from creating invoices
       return {
         isSubscribed: false,
-        canCreateInvoice: false, // Don't allow invoice creation as fallback
+        canCreateInvoice: true, // Allow invoice creation by default for error cases
         subscription: null,
         freeUsage: { 
-          used: 3, // Assume limit reached to prevent unauthorized usage
+          used: 0, 
           limit: 3, 
-          canUseFreeTier: false 
+          canUseFreeTier: true 
         },
       };
     }

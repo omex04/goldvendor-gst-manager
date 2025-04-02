@@ -68,16 +68,16 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error('Failed to check subscription status:', error);
-      // Set restrictive default values when there's an error checking subscription
-      // to prevent unauthorized access
+      // Set permissive default values when there's an error checking subscription
+      // to allow new users to create invoices
       setStatus({
         isSubscribed: false,
-        canCreateInvoice: false, // Don't allow invoice creation on error
+        canCreateInvoice: true, // Allow invoice creation by default for error cases
         subscription: null,
         freeUsage: {
           used: 0,
           limit: 3,
-          canUseFreeTier: false,
+          canUseFreeTier: true,
         },
         isLoading: false,
       });

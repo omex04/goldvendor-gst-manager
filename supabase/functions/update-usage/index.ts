@@ -102,25 +102,41 @@ serve(async (req: Request) => {
         .eq("user_id", user.id)
         .single();
 
-      if (usageError && usageError.code !== "PGRST116") {
-        // PGRST116 means no rows found
-        throw new Error(`Failed to check invoice usage: ${usageError.message}`);
-      }
-
       const freeInvoicesLimit = 3;
 
       // If no entry exists, create one
-      if (!usageData) {
+      if (usageError) {
         console.log("Creating new invoice usage record");
         
-        const { error: insertError } = await supabaseClient.from("invoice_usage").insert({
-          user_id: user.id,
-          free_invoices_used: 1,
-        });
+        const { data: newUsage, error: insertError } = await supabaseClient
+          .from("invoice_usage")
+          .insert({
+            user_id: user.id,
+            free_invoices_used: 1,
+          })
+          .select()
+          .single();
 
         if (insertError) {
           throw new Error(`Failed to create invoice usage: ${insertError.message}`);
         }
+        
+        console.log("Created new usage record:", newUsage);
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Free tier invoice created",
+            freeUsage: {
+              used: 1,
+              limit: freeInvoicesLimit,
+            },
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       } else {
         console.log("Current free invoices used:", usageData.free_invoices_used);
         
@@ -143,17 +159,21 @@ serve(async (req: Request) => {
         }
 
         // Increment free usage count
-        const { error: updateError } = await supabaseClient
+        const { data: updatedUsage, error: updateError } = await supabaseClient
           .from("invoice_usage")
           .update({ 
             free_invoices_used: usageData.free_invoices_used + 1,
             updated_at: new Date().toISOString()
           })
-          .eq("id", usageData.id);
+          .eq("user_id", user.id)
+          .select()
+          .single();
 
         if (updateError) {
           throw new Error(`Failed to update invoice usage: ${updateError.message}`);
         }
+        
+        console.log("Updated usage record:", updatedUsage);
       }
     }
 

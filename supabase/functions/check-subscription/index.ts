@@ -71,14 +71,10 @@ serve(async (req: Request) => {
       .eq("user_id", user.id)
       .single();
 
-    if (usageError && usageError.code !== "PGRST116") {
-      console.error("Error fetching invoice usage:", usageError);
-      throw new Error(`Failed to check invoice usage: ${usageError.message}`);
-    }
-
-    // Create usage record if it doesn't exist - this is critical for new users
-    if (!usageData) {
-      console.log("No usage record found for user, creating new record with 0 usage");
+    if (usageError) {
+      console.log("No usage record found or error:", usageError.message);
+      
+      // Create usage record if it doesn't exist - this is critical for new users
       const { data: newUsage, error: createError } = await supabaseClient
         .from("invoice_usage")
         .insert({ user_id: user.id, free_invoices_used: 0 })
@@ -91,6 +87,7 @@ serve(async (req: Request) => {
       }
 
       usageData = newUsage;
+      console.log("Created new usage record:", usageData);
     }
 
     console.log("User free invoices used:", usageData?.free_invoices_used);
@@ -101,7 +98,7 @@ serve(async (req: Request) => {
     const freeUsageRemaining = freeUsageLimit - freeUsageUsed;
     const canUseFreeTier = freeUsageRemaining > 0;
     
-    // This is the key change - a user can create an invoice if:
+    // A user can create an invoice if:
     // 1. They have an active subscription, OR
     // 2. They have free invoices remaining
     const canCreateInvoice = isSubscribed || canUseFreeTier;
@@ -109,15 +106,13 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        data: {
-          isSubscribed,
-          canCreateInvoice,
-          subscription,
-          freeUsage: {
-            used: freeUsageUsed,
-            limit: freeUsageLimit,
-            canUseFreeTier,
-          },
+        isSubscribed,
+        canCreateInvoice,
+        subscription,
+        freeUsage: {
+          used: freeUsageUsed,
+          limit: freeUsageLimit,
+          canUseFreeTier,
         },
       }),
       {
@@ -131,6 +126,15 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: false,
         error: error.message,
+        // Default to allowing invoice creation for error cases to prevent blocking new users
+        isSubscribed: false,
+        canCreateInvoice: true,
+        subscription: null,
+        freeUsage: {
+          used: 0,
+          limit: 3,
+          canUseFreeTier: true,
+        },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
