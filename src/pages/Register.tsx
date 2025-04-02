@@ -38,13 +38,14 @@ const Register = () => {
     setIsLoading(true);
     
     try {
+      // Simplify the user data to avoid potential issues
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            business_name: businessName || ''
+            business_name: businessName || null
           }
         }
       });
@@ -58,6 +59,20 @@ const Register = () => {
       }
       
       toast.success('Registration successful! Please check your email for confirmation.');
+      
+      // Initialize invoice usage for the new user
+      if (data.user) {
+        try {
+          await supabase.from('invoice_usage').insert({
+            user_id: data.user.id,
+            free_invoices_used: 0
+          });
+        } catch (usageError) {
+          console.error('Error initializing invoice usage:', usageError);
+          // Continue despite this error since the trigger should handle it
+        }
+      }
+      
       navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'Registration failed. Please try again later.');

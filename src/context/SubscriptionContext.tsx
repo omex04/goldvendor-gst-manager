@@ -19,7 +19,7 @@ interface SubscriptionStatus {
 
 const defaultStatus: SubscriptionStatus = {
   isSubscribed: false,
-  canCreateInvoice: false,
+  canCreateInvoice: true, // Default to true to prevent blocking new users
   subscription: null,
   freeUsage: {
     used: 0,
@@ -98,10 +98,10 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      // Small delay to ensure auth is fully processed
+      // Increased delay to ensure auth is fully processed
       const timer = setTimeout(() => {
         refreshSubscription();
-      }, 500);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, user?.id]);

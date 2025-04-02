@@ -83,11 +83,13 @@ serve(async (req: Request) => {
 
       if (createError) {
         console.error("Error creating invoice usage:", createError);
-        throw new Error(`Failed to create invoice usage: ${createError.message}`);
+        // Even if we fail to create a usage record, default to allowing usage
+        // This ensures new users won't be blocked from creating invoices
+        usageData = { free_invoices_used: 0 };
+      } else {
+        usageData = newUsage;
+        console.log("Created new usage record:", usageData);
       }
-
-      usageData = newUsage;
-      console.log("Created new usage record:", usageData);
     }
 
     console.log("User free invoices used:", usageData?.free_invoices_used);
