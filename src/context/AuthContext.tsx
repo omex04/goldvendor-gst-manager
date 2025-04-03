@@ -61,25 +61,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Set up auth state change listener
+    // Set up auth state change listener FIRST (critical!)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      (_event, currentSession) => {
+        // Only use synchronous state updates in the callback
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setIsAuthenticated(!!currentSession);
         
-        // Show toast for certain auth events
-        if (event === 'SIGNED_IN') {
-          toast.success('Signed in successfully');
-          navigate('/dashboard');
-        } else if (event === 'SIGNED_OUT') {
-          toast.info('Signed out');
-          navigate('/');
-        }
+        // No async operations here to avoid deadlocks with Supabase client
       }
     );
 
-    // Initial session check
+    // THEN check for existing session
     refreshUser();
 
     return () => {

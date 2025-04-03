@@ -40,16 +40,20 @@ const Register = () => {
     try {
       const result = await signUp(email, password, { 
         name: fullName,
-        businessName 
+        businessName: businessName || undefined
       });
       
       if (!result.success) {
         throw new Error(result.error || 'Registration failed');
       }
       
-      await refreshUser(); // Update auth context
       toast.success('Registration successful!');
-      navigate('/dashboard');
+      
+      // Wait for a moment to allow database triggers to complete
+      setTimeout(async () => {
+        await refreshUser(); // Update auth context
+        navigate('/dashboard');
+      }, 1000);
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'Registration failed. Please try again later.');

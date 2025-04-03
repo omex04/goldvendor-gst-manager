@@ -39,22 +39,31 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
-    // First, create the user with basic metadata
+    // Create the user with minimal data first
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: userData.name,
-          business_name: userData.businessName || null
-        },
-      }
     });
 
     if (error) throw error;
     
     if (data.user && !data.user.identities?.length) {
       return { success: false, error: 'This email is already registered. Please log in instead.' };
+    }
+    
+    // If signup was successful and we have a user, update their metadata separately
+    if (data.user) {
+      const metadataUpdate = await supabase.auth.updateUser({
+        data: {
+          full_name: userData.name,
+          business_name: userData.businessName || null
+        }
+      });
+      
+      if (metadataUpdate.error) {
+        console.error('Warning: User created but metadata update failed', metadataUpdate.error);
+        // Non-fatal error, continue since the user account was created
+      }
     }
     
     return { success: true, data };
