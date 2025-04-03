@@ -12,7 +12,7 @@ export const supabase = supabaseClient;
 // Function to check if Supabase connection is working
 export const checkSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabase.from('invoices').select('count').single();
+    const { data, error } = await supabase.from('profiles').select('count').single();
     if (error) throw error;
     return true;
   } catch (error) {
