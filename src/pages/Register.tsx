@@ -18,7 +18,7 @@ const Register = () => {
   const [businessName, setBusinessName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, refreshUser } = useAuth();
 
   useEffect(() => {
     // If already authenticated, redirect to dashboard
@@ -38,17 +38,17 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Simple registration - only using required fields
       const result = await signUp(email, password, { 
         name: fullName,
-        businessName: businessName || '' 
+        businessName 
       });
       
       if (!result.success) {
         throw new Error(result.error || 'Registration failed');
       }
       
-      toast.success('Registration successful! You can now log in.');
+      await refreshUser(); // Update auth context
+      toast.success('Registration successful!');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Registration error:', error);
