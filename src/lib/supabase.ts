@@ -12,8 +12,8 @@ export const supabase = supabaseClient;
 // Function to check if Supabase connection is working
 export const checkSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabase.from('profiles').select('count').single();
-    if (error) throw error;
+    const { error } = await supabase.from('profiles').select('count').single();
+    if (error && error.code !== 'PGRST116') throw error;
     return true;
   } catch (error) {
     console.error('Supabase connection error:', error);
@@ -39,31 +39,23 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
-    // Create the user with minimal data first
+    // First create a user account
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-    });
-
-    if (error) throw error;
-    
-    if (data.user && !data.user.identities?.length) {
-      return { success: false, error: 'This email is already registered. Please log in instead.' };
-    }
-    
-    // If signup was successful and we have a user, update their metadata separately
-    if (data.user) {
-      const metadataUpdate = await supabase.auth.updateUser({
+      options: {
+        // Set metadata directly during signup to avoid race conditions
         data: {
           full_name: userData.name,
           business_name: userData.businessName || null
         }
-      });
-      
-      if (metadataUpdate.error) {
-        console.error('Warning: User created but metadata update failed', metadataUpdate.error);
-        // Non-fatal error, continue since the user account was created
       }
+    });
+
+    if (error) throw error;
+    
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      return { success: false, error: 'This email is already registered. Please log in instead.' };
     }
     
     return { success: true, data };

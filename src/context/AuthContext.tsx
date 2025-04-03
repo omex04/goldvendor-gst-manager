@@ -31,20 +31,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshUser = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
       
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setIsAuthenticated(!!data.session);
-
-      // Handle redirects based on auth state and current path
       if (data.session) {
-        // If authenticated and on auth pages, redirect to dashboard
+        setSession(data.session);
+        setUser(data.session.user);
+        setIsAuthenticated(true);
+        
+        // Handle redirects based on auth state and current path
         if (['/login', '/register'].includes(location.pathname)) {
           navigate('/dashboard');
         }
       } else {
+        setSession(null);
+        setUser(null);
+        setIsAuthenticated(false);
+        
         // If not authenticated and on protected pages, redirect to login
         if (!['/login', '/register', '/', '/about', '/contact', '/pricing', '/terms', '/privacy'].includes(location.pathname)) {
           navigate('/login');
@@ -61,19 +65,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Set up auth state change listener FIRST (critical!)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
-        // Only use synchronous state updates in the callback
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setIsAuthenticated(!!currentSession);
-        
-        // No async operations here to avoid deadlocks with Supabase client
+    // Set up the auth state listener first to avoid missing auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      // Handle synchronous state updates
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsAuthenticated(!!currentSession);
+      
+      // Handle events outside the callback in a separate function to avoid deadlocks
+      if (event === 'SIGNED_IN') {
+        setTimeout(() => toast.success('Signed in successfully'), 0);
+      } else if (event === 'SIGNED_OUT') {
+        setTimeout(() => toast.info('Signed out'), 0);
       }
-    );
+    });
 
-    // THEN check for existing session
+    // Then check for existing session
     refreshUser();
 
     return () => {

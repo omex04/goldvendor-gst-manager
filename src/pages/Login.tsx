@@ -1,22 +1,38 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'sonner';
-import { signIn } from '@/lib/supabase';
-import { useAuth } from '@/context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
+import { signIn } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/context/AuthContext';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { ArrowRight, KeyRound } from 'lucide-react';
+
+const formSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated, refreshUser } = useAuth();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   useEffect(() => {
     // If already authenticated, redirect to dashboard
@@ -25,24 +41,17 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error('Please enter both email and password');
-      return;
-    }
-    
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
     try {
-      const result = await signIn(email, password);
+      const result = await signIn(values.email, values.password);
       
       if (!result.success) {
         throw new Error(result.error || 'Login failed');
       }
       
-      await refreshUser(); // Update auth context
+      await refreshUser();
       toast.success('Login successful');
       navigate('/dashboard');
     } catch (error: any) {
@@ -57,72 +66,115 @@ const Login = () => {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <LandingHeader />
       
-      <div className="flex-grow flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gold-600 dark:text-gold-500">Gold GST Manager</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Login to your account</p>
+      <div className="flex-grow flex items-center justify-center px-6 py-8">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
+          {/* Left side - Welcome back content */}
+          <div className="lg:col-span-2 space-y-6 text-center lg:text-left">
+            <div>
+              <h1 className="text-4xl font-bold text-gold-600 dark:text-gold-500">Welcome Back</h1>
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+                Log in to access your Gold GST Manager dashboard and manage your invoices
+              </p>
+            </div>
+            
+            <div className="bg-gold-100 dark:bg-gold-900/30 p-6 rounded-xl">
+              <h3 className="font-medium text-gold-800 dark:text-gold-400 text-lg">New Features</h3>
+              <ul className="mt-3 space-y-2">
+                <li className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-gold-500"></span>
+                  <span className="text-gray-700 dark:text-gray-300">Improved invoice templates</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-gold-500"></span>
+                  <span className="text-gray-700 dark:text-gray-300">Enhanced reporting</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-gold-500"></span>
+                  <span className="text-gray-700 dark:text-gray-300">Mobile optimization</span>
+                </li>
+              </ul>
+            </div>
           </div>
           
-          <Card className="dark:bg-gray-800 dark:border-gray-700 transition-all hover:shadow-md">
-            <CardHeader>
-              <CardTitle className="dark:text-white">Login</CardTitle>
+          {/* Right side - Login form */}
+          <Card className="lg:col-span-3 dark:bg-gray-800 dark:border-gray-700 shadow-lg">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-gold-500" />
+                <CardTitle className="dark:text-white text-2xl">Login to your account</CardTitle>
+              </div>
               <CardDescription className="dark:text-gray-400">
-                Enter your credentials to access your account
+                Enter your credentials to access your dashboard
               </CardDescription>
             </CardHeader>
-            <form onSubmit={handleLogin}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="dark:text-gray-300">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your.email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="dark:text-gray-300">Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email" 
+                            placeholder="your.email@example.com"
+                            className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="dark:text-gray-300">Password</Label>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
+                  
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="dark:text-gray-300">Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password" 
+                            placeholder="••••••••"
+                            className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col space-y-4">
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-black transition-colors" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Logging in...' : 'Log in'}
-                </Button>
-                <div className="text-center w-full">
-                  <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gold-600 dark:hover:text-gold-500 transition-colors">
-                    Back to home
-                  </Link>
-                </div>
-                <div className="text-center w-full">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="text-gold-600 dark:text-gold-500 hover:underline transition-colors">
-                      Sign up
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4 pt-0">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-black flex items-center justify-center gap-2" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Logging in...' : 'Log in'}
+                    {!isLoading && <ArrowRight className="h-4 w-4" />}
+                  </Button>
+                  
+                  <div className="grid grid-cols-2 gap-4 w-full">
+                    <Link to="/" className="text-sm text-center text-gray-600 dark:text-gray-400 hover:text-gold-600 dark:hover:text-gold-500">
+                      Back to home
                     </Link>
-                  </p>
-                </div>
-              </CardFooter>
-            </form>
+                    
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        No account?{' '}
+                        <Link to="/register" className="text-gold-600 dark:text-gold-500 hover:underline">
+                          Sign up
+                        </Link>
+                      </p>
+                    </div>
+                  </div>
+                </CardFooter>
+              </form>
+            </Form>
           </Card>
         </div>
       </div>
