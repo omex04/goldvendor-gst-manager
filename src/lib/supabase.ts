@@ -3,19 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { toast } from 'sonner';
 
-// These values must be replaced with actual Supabase credentials in .env file
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Import the supabase client that's already correctly configured
+import { supabase as supabaseClient } from '@/integrations/supabase/client';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.');
-}
-
-// Use empty strings as fallbacks to prevent URL constructor errors during development
-export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey
-);
+// Export the pre-configured client
+export const supabase = supabaseClient;
 
 // Function to check if Supabase connection is working
 export const checkSupabaseConnection = async () => {

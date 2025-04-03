@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { signIn } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
@@ -36,12 +36,11 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const result = await signIn(email, password);
       
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error || 'Login failed');
+      }
       
       await refreshUser(); // Update auth context
       toast.success('Login successful');
