@@ -39,17 +39,13 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
-    // First check if the email already exists
-    const { data: existingUser } = await supabase.auth.signInWithPassword({
-      email,
-      password: 'dummy-password-to-check-existence'
-    }).catch(() => ({ data: null }));
+    console.log("Starting registration with values:", {
+      email: email,
+      name: userData.name,
+      businessName: userData.businessName || undefined
+    });
     
-    if (existingUser) {
-      return { success: false, error: 'This email is already registered. Please log in instead.' };
-    }
-    
-    // Create user with auth only first - don't set metadata here
+    // Create user with auth only first - don't try to check email existence beforehand
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -59,11 +55,18 @@ export const signUp = async (email: string, password: string, userData: { name: 
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Authentication error during signup:", error);
+      // If the error is about email already in use, provide a clearer error message
+      if (error.message.includes("email already in use")) {
+        return { success: false, error: 'This email is already registered. Please log in instead.' };
+      }
+      throw error;
+    }
     
     if (data.user) {
       // If row level security is properly set up, this will work without additional security checks
-      await supabase.from('profiles').upsert({
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         full_name: userData.name,
         business_name: userData.businessName || null,
@@ -71,6 +74,12 @@ export const signUp = async (email: string, password: string, userData: { name: 
       }, {
         onConflict: 'id'
       });
+      
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        // We don't want to fail the signup if just the profile creation fails
+        // The user is created, they just might not have complete profile data
+      }
       
       return { success: true, data };
     } else {

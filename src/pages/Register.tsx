@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const formSchema = z.object({
 
 const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated, refreshUser } = useAuth();
 
@@ -44,6 +46,7 @@ const Register = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    setApiError(null);
     
     try {
       console.log("Starting registration with values:", {
@@ -64,7 +67,9 @@ const Register = () => {
       console.log("Registration result:", result);
       
       if (!result.success) {
-        throw new Error(result.error || 'Registration failed');
+        setApiError(result.error || 'Registration failed');
+        toast.error(result.error || 'Registration failed');
+        return;
       }
       
       toast.success('Registration successful! Logging you in...');
@@ -76,6 +81,7 @@ const Register = () => {
       }, 1500);
     } catch (error: any) {
       console.error('Registration error:', error);
+      setApiError(error.message || 'Registration failed. Please try again later.');
       toast.error(error.message || 'Registration failed. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -100,6 +106,12 @@ const Register = () => {
                   Enter your details to get started with Gold GST Manager
                 </CardDescription>
               </CardHeader>
+              
+              {apiError && (
+                <div className="mb-4 p-3 bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 rounded-md">
+                  {apiError}
+                </div>
+              )}
               
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
