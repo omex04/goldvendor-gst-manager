@@ -45,42 +45,26 @@ export const signUp = async (email: string, password: string, userData: { name: 
       businessName: userData.businessName || undefined
     });
     
-    // Create user with auth only first - don't try to check email existence beforehand
+    // Create user with auth API and set user metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // Setting emailRedirectTo ensures the user returns to the app after confirming by email
+        data: {
+          full_name: userData.name,
+          business_name: userData.businessName || null,
+        },
         emailRedirectTo: `${window.location.origin}/dashboard`
       }
     });
-
+    
     if (error) {
       console.error("Authentication error during signup:", error);
-      // If the error is about email already in use, provide a clearer error message
-      if (error.message.includes("email already in use")) {
-        return { success: false, error: 'This email is already registered. Please log in instead.' };
-      }
-      throw error;
+      return { success: false, error: error.message };
     }
     
     if (data.user) {
-      // If row level security is properly set up, this will work without additional security checks
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: data.user.id,
-        full_name: userData.name,
-        business_name: userData.businessName || null,
-        email: email
-      }, {
-        onConflict: 'id'
-      });
-      
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-        // We don't want to fail the signup if just the profile creation fails
-        // The user is created, they just might not have complete profile data
-      }
-      
+      console.log("User created successfully:", data.user.id);
       return { success: true, data };
     } else {
       return { success: false, error: 'User creation failed.' };
