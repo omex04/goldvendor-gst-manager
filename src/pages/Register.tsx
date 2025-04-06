@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,22 +46,34 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const result = await signUp(values.email, values.password, { 
+      console.log("Starting registration with values:", {
+        email: values.email,
         name: values.fullName,
         businessName: values.businessName || undefined
       });
+      
+      const result = await signUp(
+        values.email, 
+        values.password, 
+        { 
+          name: values.fullName,
+          businessName: values.businessName || undefined
+        }
+      );
+      
+      console.log("Registration result:", result);
       
       if (!result.success) {
         throw new Error(result.error || 'Registration failed');
       }
       
-      toast.success('Registration successful!');
+      toast.success('Registration successful! Logging you in...');
       
-      // Wait a moment for DB triggers to complete
+      // Wait a moment to ensure backend processes are complete
       setTimeout(async () => {
         await refreshUser();
         navigate('/dashboard');
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'Registration failed. Please try again later.');

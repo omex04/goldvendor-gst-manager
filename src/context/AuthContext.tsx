@@ -65,31 +65,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Set up the auth state listener first to avoid missing auth events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      console.log('Auth state change event:', event);
-      
-      // Handle synchronous state updates
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setIsAuthenticated(!!currentSession);
-      
-      // Handle events outside the callback in a separate function to avoid deadlocks
-      if (event === 'SIGNED_IN') {
-        setTimeout(() => toast.success('Signed in successfully'), 0);
-      } else if (event === 'SIGNED_OUT') {
-        setTimeout(() => toast.info('Signed out'), 0);
-      } else if (event === 'USER_UPDATED') {
-        setTimeout(() => console.log('User updated'), 0);
-      }
-    });
+    const setupAuth = async () => {
+      // First set up the auth state listener to avoid missing auth events
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
+        console.log('Auth state change event:', event);
+        
+        // Handle synchronous state updates
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        setIsAuthenticated(!!currentSession);
+        
+        // Handle events with toast notifications outside the callback
+        if (event === 'SIGNED_IN') {
+          setTimeout(() => toast.success('Signed in successfully'), 0);
+        } else if (event === 'SIGNED_OUT') {
+          setTimeout(() => toast.info('Signed out'), 0);
+        } else if (event === 'USER_UPDATED') {
+          setTimeout(() => console.log('User updated'), 0);
+        }
+      });
 
-    // Then check for existing session
-    refreshUser();
-
-    return () => {
-      subscription.unsubscribe();
+      // Then check for existing session
+      await refreshUser();
+      
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
     };
+    
+    setupAuth();
   }, []);
 
   return (
