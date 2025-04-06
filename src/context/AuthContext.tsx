@@ -67,6 +67,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Set up the auth state listener first to avoid missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log('Auth state change event:', event);
+      
       // Handle synchronous state updates
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
@@ -77,6 +79,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTimeout(() => toast.success('Signed in successfully'), 0);
       } else if (event === 'SIGNED_OUT') {
         setTimeout(() => toast.info('Signed out'), 0);
+      } else if (event === 'USER_UPDATED') {
+        setTimeout(() => console.log('User updated'), 0);
       }
     });
 

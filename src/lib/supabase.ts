@@ -39,23 +39,32 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
-    // First create a user account
+    // First create a user account without setting metadata
+    // This change helps avoid race conditions with the trigger
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        // Set metadata directly during signup to avoid race conditions
-        data: {
-          full_name: userData.name,
-          business_name: userData.businessName || null
-        }
-      }
     });
 
     if (error) throw error;
     
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       return { success: false, error: 'This email is already registered. Please log in instead.' };
+    }
+
+    // Update user metadata separately if signup was successful
+    if (data.user) {
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          full_name: userData.name,
+          business_name: userData.businessName || null
+        }
+      });
+
+      if (updateError) {
+        console.error('Error updating user metadata:', updateError);
+        // Continue since the user was created successfully
+      }
     }
     
     return { success: true, data };
