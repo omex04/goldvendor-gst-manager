@@ -12,7 +12,7 @@ export const supabase = supabaseClient;
 // Function to check if Supabase connection is working
 export const checkSupabaseConnection = async () => {
   try {
-    const { error } = await supabase.from('profiles').select('count').single();
+    const { data, error } = await supabase.from('profiles').select('count').single();
     if (error && error.code !== 'PGRST116') throw error;
     return true;
   } catch (error) {
@@ -39,25 +39,43 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
-    // Create user with minimal data first
+    // First check if the email already exists
+    const { data: existingUser } = await supabase.auth.signInWithPassword({
+      email,
+      password: 'dummy-password-to-check-existence'
+    }).catch(() => ({ data: null }));
+    
+    if (existingUser) {
+      return { success: false, error: 'This email is already registered. Please log in instead.' };
+    }
+    
+    // Create user with auth only first - don't set metadata here
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          full_name: userData.name,
-          business_name: userData.businessName || null
-        }
+        // Setting emailRedirectTo ensures the user returns to the app after confirming by email
+        emailRedirectTo: `${window.location.origin}/dashboard`
       }
     });
 
     if (error) throw error;
     
-    if (data.user && data.user.identities && data.user.identities.length === 0) {
-      return { success: false, error: 'This email is already registered. Please log in instead.' };
+    if (data.user) {
+      // If row level security is properly set up, this will work without additional security checks
+      await supabase.from('profiles').upsert({
+        id: data.user.id,
+        full_name: userData.name,
+        business_name: userData.businessName || null,
+        email: email
+      }, {
+        onConflict: 'id'
+      });
+      
+      return { success: true, data };
+    } else {
+      return { success: false, error: 'User creation failed.' };
     }
-    
-    return { success: true, data };
   } catch (error: any) {
     console.error('Registration error:', error);
     return { success: false, error: error.message };

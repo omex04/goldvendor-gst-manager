@@ -65,35 +65,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const setupAuth = async () => {
-      // First set up the auth state listener to avoid missing auth events
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
-        console.log('Auth state change event:', event);
-        
-        // Handle synchronous state updates
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setIsAuthenticated(!!currentSession);
-        
-        // Handle events with toast notifications outside the callback
-        if (event === 'SIGNED_IN') {
-          setTimeout(() => toast.success('Signed in successfully'), 0);
-        } else if (event === 'SIGNED_OUT') {
-          setTimeout(() => toast.info('Signed out'), 0);
-        } else if (event === 'USER_UPDATED') {
-          setTimeout(() => console.log('User updated'), 0);
-        }
-      });
-
-      // Then check for existing session
-      await refreshUser();
+    // First set up the auth state listener to avoid missing auth events
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log('Auth state change event:', event);
       
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
-    };
+      // Only update state synchronously to avoid deadlocks
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsAuthenticated(!!currentSession);
+      
+      // Handle events with toast notifications outside the callback
+      if (event === 'SIGNED_IN') {
+        setTimeout(() => toast.success('Signed in successfully'), 0);
+      } else if (event === 'SIGNED_OUT') {
+        setTimeout(() => toast.info('Signed out'), 0);
+      } else if (event === 'USER_UPDATED') {
+        setTimeout(() => console.log('User updated'), 0);
+      }
+    });
+
+    // Then check for existing session
+    refreshUser();
     
-    setupAuth();
+    return () => {
+      // Make sure to unsubscribe when component unmounts
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   return (
