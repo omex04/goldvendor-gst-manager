@@ -63,6 +63,7 @@ const Register = () => {
       if (!result.success) {
         setApiError(result.error || 'Registration failed');
         toast.error(result.error || 'Registration failed');
+        setIsLoading(false);
         return;
       }
       
@@ -70,14 +71,21 @@ const Register = () => {
       
       // Wait a moment to ensure backend processes are complete
       setTimeout(async () => {
-        await refreshUser();
-        navigate('/dashboard');
+        try {
+          await refreshUser();
+          navigate('/dashboard');
+        } catch (refreshError) {
+          console.error("Error refreshing user after registration:", refreshError);
+          toast.error("Account created but couldn't log in automatically. Please try logging in.");
+          navigate('/login');
+        } finally {
+          setIsLoading(false);
+        }
       }, 1500);
     } catch (error: any) {
       console.error('Registration error:', error);
       setApiError(error.message || 'Registration failed. Please try again later.');
       toast.error(error.message || 'Registration failed. Please try again later.');
-    } finally {
       setIsLoading(false);
     }
   };

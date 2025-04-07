@@ -39,6 +39,9 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
+    // Debug logging to help track issue
+    console.log("Starting user registration process");
+    
     // Create user with auth API and set user metadata
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -59,13 +62,17 @@ export const signUp = async (email: string, password: string, userData: { name: 
     
     if (data.user) {
       console.log("User created successfully:", data.user.id);
+      
+      // Add a small delay to allow time for database triggers to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       return { success: true, data };
     } else {
       return { success: false, error: 'User creation failed.' };
     }
   } catch (error: any) {
     console.error('Registration error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'An unknown error occurred during registration' };
   }
 };
 
