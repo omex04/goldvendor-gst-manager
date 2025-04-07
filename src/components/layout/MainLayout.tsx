@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
@@ -10,6 +11,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { signOut } from '@/lib/localAuth';
+import { useSettings } from '@/context/SettingsContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
