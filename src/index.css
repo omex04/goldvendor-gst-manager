@@ -93,6 +93,7 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
   }
   
   /* Custom scrollbar */
@@ -145,7 +146,7 @@
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-gold-500 text-primary-foreground rounded-md transition-all hover:bg-gold-600 active:bg-gold-700 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-opacity-50;
+    @apply px-4 py-2 bg-gold-500 text-primary-foreground rounded-md transition-all hover:bg-gold-600 active:bg-gold-700 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-opacity-50 hover:scale-105;
   }
   
   .card-hover {
@@ -184,5 +185,42 @@
   .dark input {
     @apply bg-gray-700 border-gray-600 text-gray-200;
   }
+  
+  /* Modern card styles */
+  .modern-card {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-300;
+  }
+  
+  /* Button with glow effect */
+  .btn-glow {
+    @apply relative overflow-hidden bg-gold-500 text-black;
+  }
+  
+  .btn-glow::after {
+    @apply absolute inset-0 rounded-md opacity-0 transition-opacity duration-300;
+    content: '';
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+  }
+  
+  .btn-glow:hover::after {
+    @apply opacity-100;
+  }
+  
+  /* Gradient backgrounds */
+  .bg-gradient-gold {
+    @apply bg-gradient-to-r from-gold-400 to-gold-600;
+  }
+  
+  .bg-gradient-light {
+    @apply bg-gradient-to-br from-white to-gray-100;
+  }
+  
+  .bg-gradient-dark {
+    @apply bg-gradient-to-br from-gray-800 to-gray-900;
+  }
+  
+  /* Testimonial card */
+  .testimonial-card {
+    @apply bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700 backdrop-blur-sm;
+  }
 }
-

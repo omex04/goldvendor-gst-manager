@@ -10,20 +10,46 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/components/ui/theme-provider';
+import { toast } from 'sonner';
 
 const Settings = () => {
   const { settings, updateVendorSettings, updateBankSettings, updateGSTSettings, updatePreferenceSettings, isLoading } = useSettings();
   const { theme } = useTheme();
   
   // Local state for form values
-  const [vendorInfo, setVendorInfo] = React.useState(settings.vendor);
-  const [bankDetails, setBankDetails] = React.useState(settings.bank);
-  const [gstSettings, setGstSettings] = React.useState(settings.gst);
-  const [preferences, setPreferences] = React.useState(settings.preferences);
+  const [vendorInfo, setVendorInfo] = React.useState(settings?.vendor || {
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    gstNo: '',
+    panNo: '',
+  });
+  
+  const [bankDetails, setBankDetails] = React.useState(settings?.bank || {
+    accountName: '',
+    accountNumber: '',
+    bankName: '',
+    ifscCode: '',
+    branch: '',
+  });
+  
+  const [gstSettings, setGstSettings] = React.useState(settings?.gst || {
+    cgstRate: 1.5,
+    sgstRate: 1.5,
+    autoCalculate: true,
+  });
+  
+  const [preferences, setPreferences] = React.useState(settings?.preferences || {
+    darkMode: false,
+    notifications: true,
+    currency: 'INR',
+    autoSave: false,
+  });
   
   // Update local state when settings change
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && settings) {
       setVendorInfo(settings.vendor);
       setBankDetails(settings.bank);
       setGstSettings(settings.gst);
@@ -55,7 +81,7 @@ const Settings = () => {
     }));
   };
   
-  const handlePreferencesChange = (key: keyof typeof preferences, value: boolean) => {
+  const handlePreferencesChange = (key: keyof typeof preferences, value: boolean | string) => {
     setPreferences(prev => ({
       ...prev,
       [key]: value
@@ -64,18 +90,22 @@ const Settings = () => {
 
   const saveVendorSettings = () => {
     updateVendorSettings(vendorInfo);
+    toast.success('Business information saved successfully');
   };
   
   const saveBankSettings = () => {
     updateBankSettings(bankDetails);
+    toast.success('Bank details saved successfully');
   };
   
   const saveGstSettings = () => {
     updateGSTSettings(gstSettings);
+    toast.success('GST settings saved successfully');
   };
   
   const savePreferences = () => {
     updatePreferenceSettings(preferences);
+    toast.success('Preferences saved successfully');
   };
 
   if (isLoading) {
@@ -105,7 +135,7 @@ const Settings = () => {
           </TabsList>
           
           <TabsContent value="business" className="space-y-4 mt-6">
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <Card className="dark:bg-gray-800 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="dark:text-white">Business Information</CardTitle>
                 <CardDescription className="dark:text-gray-400">
@@ -119,9 +149,9 @@ const Settings = () => {
                     <Input 
                       id="name" 
                       name="name" 
-                      value={vendorInfo.name} 
+                      value={vendorInfo.name || ''} 
                       onChange={handleVendorInfoChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -129,9 +159,9 @@ const Settings = () => {
                     <Input 
                       id="gstNo" 
                       name="gstNo" 
-                      value={vendorInfo.gstNo} 
+                      value={vendorInfo.gstNo || ''} 
                       onChange={handleVendorInfoChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -139,9 +169,9 @@ const Settings = () => {
                     <Input 
                       id="panNo" 
                       name="panNo" 
-                      value={vendorInfo.panNo} 
+                      value={vendorInfo.panNo || ''} 
                       onChange={handleVendorInfoChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -149,9 +179,9 @@ const Settings = () => {
                     <Input 
                       id="phone" 
                       name="phone" 
-                      value={vendorInfo.phone} 
+                      value={vendorInfo.phone || ''} 
                       onChange={handleVendorInfoChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -159,9 +189,9 @@ const Settings = () => {
                     <Input 
                       id="email" 
                       name="email" 
-                      value={vendorInfo.email} 
+                      value={vendorInfo.email || ''} 
                       onChange={handleVendorInfoChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -169,16 +199,16 @@ const Settings = () => {
                     <Input 
                       id="address" 
                       name="address" 
-                      value={vendorInfo.address} 
+                      value={vendorInfo.address || ''} 
                       onChange={handleVendorInfoChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                 </div>
                 <div className="flex justify-end">
                   <Button 
                     onClick={saveVendorSettings} 
-                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white"
+                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white transform hover:scale-105 transition-all"
                   >
                     Save Business Info
                   </Button>
@@ -188,7 +218,7 @@ const Settings = () => {
           </TabsContent>
           
           <TabsContent value="bank" className="space-y-4 mt-6">
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <Card className="dark:bg-gray-800 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="dark:text-white">Bank Account Details</CardTitle>
                 <CardDescription className="dark:text-gray-400">
@@ -202,9 +232,9 @@ const Settings = () => {
                     <Input 
                       id="accountName" 
                       name="accountName" 
-                      value={bankDetails.accountName} 
+                      value={bankDetails.accountName || ''} 
                       onChange={handleBankDetailsChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -212,9 +242,9 @@ const Settings = () => {
                     <Input 
                       id="accountNumber" 
                       name="accountNumber" 
-                      value={bankDetails.accountNumber} 
+                      value={bankDetails.accountNumber || ''} 
                       onChange={handleBankDetailsChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -222,9 +252,9 @@ const Settings = () => {
                     <Input 
                       id="bankName" 
                       name="bankName" 
-                      value={bankDetails.bankName} 
+                      value={bankDetails.bankName || ''} 
                       onChange={handleBankDetailsChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -232,9 +262,9 @@ const Settings = () => {
                     <Input 
                       id="ifscCode" 
                       name="ifscCode" 
-                      value={bankDetails.ifscCode} 
+                      value={bankDetails.ifscCode || ''} 
                       onChange={handleBankDetailsChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -242,16 +272,16 @@ const Settings = () => {
                     <Input 
                       id="branch" 
                       name="branch" 
-                      value={bankDetails.branch} 
+                      value={bankDetails.branch || ''} 
                       onChange={handleBankDetailsChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                 </div>
                 <div className="flex justify-end">
                   <Button 
                     onClick={saveBankSettings} 
-                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white"
+                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white transform hover:scale-105 transition-all"
                   >
                     Save Bank Details
                   </Button>
@@ -261,7 +291,7 @@ const Settings = () => {
           </TabsContent>
           
           <TabsContent value="gst" className="space-y-4 mt-6">
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <Card className="dark:bg-gray-800 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="dark:text-white">GST Settings</CardTitle>
                 <CardDescription className="dark:text-gray-400">
@@ -279,7 +309,7 @@ const Settings = () => {
                       step="0.01"
                       value={gstSettings.cgstRate} 
                       onChange={handleGstSettingsChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                   <div className="space-y-2">
@@ -291,7 +321,7 @@ const Settings = () => {
                       step="0.01"
                       value={gstSettings.sgstRate} 
                       onChange={handleGstSettingsChange} 
-                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors focus:border-gold-500"
                     />
                   </div>
                 </div>
@@ -314,7 +344,7 @@ const Settings = () => {
                 <div className="flex justify-end">
                   <Button 
                     onClick={saveGstSettings} 
-                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white"
+                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white transform hover:scale-105 transition-all"
                   >
                     Save GST Settings
                   </Button>
@@ -324,7 +354,7 @@ const Settings = () => {
           </TabsContent>
           
           <TabsContent value="preferences" className="space-y-4 mt-6">
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <Card className="dark:bg-gray-800 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="dark:text-white">Application Preferences</CardTitle>
                 <CardDescription className="dark:text-gray-400">
@@ -335,7 +365,7 @@ const Settings = () => {
                 <div className="flex items-center space-x-2">
                   <Switch 
                     id="autoSave" 
-                    checked={preferences.autoSave} 
+                    checked={!!preferences.autoSave} 
                     onCheckedChange={(checked) => handlePreferencesChange('autoSave', checked)} 
                     className="dark:bg-gray-700"
                   />
@@ -345,7 +375,7 @@ const Settings = () => {
                 <div className="flex items-center space-x-2">
                   <Switch 
                     id="darkMode" 
-                    checked={preferences.darkMode} 
+                    checked={!!preferences.darkMode} 
                     onCheckedChange={(checked) => handlePreferencesChange('darkMode', checked)} 
                     className="dark:bg-gray-700"
                   />
@@ -355,7 +385,7 @@ const Settings = () => {
                 <div className="flex justify-end">
                   <Button 
                     onClick={savePreferences} 
-                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white"
+                    className="bg-gold-500 hover:bg-gold-600 dark:bg-gold-600 dark:hover:bg-gold-700 text-white transform hover:scale-105 transition-all"
                   >
                     Save Preferences
                   </Button>
