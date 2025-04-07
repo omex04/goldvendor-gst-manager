@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
@@ -10,8 +9,7 @@ import { useTheme } from '@/components/ui/theme-provider';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useSettings } from '@/context/SettingsContext';
+import { signOut } from '@/lib/localAuth';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -45,12 +43,12 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await signOut();
       
       if (error) {
         throw error;
       } else {
-        await refreshUser(); // Update auth context after logout
+        await refreshUser();
         toast.success('Logged out successfully');
         navigate('/');
       }
@@ -64,7 +62,6 @@ export function MainLayout({ children }: MainLayoutProps) {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     
-    // Also update the settings preference
     if (!isLoading && settings) {
       updatePreferenceSettings({
         ...settings.preferences,

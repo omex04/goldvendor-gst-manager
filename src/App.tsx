@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -22,7 +21,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './components/ui/theme-provider';
-import { supabase } from '@/integrations/supabase/client';
+import { checkAuthConnection } from '@/lib/localAuth';
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -32,7 +31,7 @@ function App() {
   const storedTheme = localStorage.getItem('vite-ui-theme') || 'light';
 
   useEffect(() => {
-    // Initialize local storage and check connection
+    // Check connection
     const initializeLocalStorage = () => {
       try {
         // Creating a test entry to see if localStorage is working
@@ -45,20 +44,10 @@ function App() {
       }
     };
     
-    const checkSupabaseConnection = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        return true;
-      } catch (error) {
-        console.error("Supabase connection error:", error);
-        return true; // Return true anyway to allow app to load
-      }
-    };
-
-    Promise.all([checkSupabaseConnection(), initializeLocalStorage()])
-      .then(([supabaseConnected, localStorageConnected]) => {
-        setIsConnected(supabaseConnected && localStorageConnected);
+    // Use local auth checker
+    Promise.all([checkAuthConnection(), initializeLocalStorage()])
+      .then(([authConnected, localStorageConnected]) => {
+        setIsConnected(authConnected && localStorageConnected);
       });
   }, []);
 

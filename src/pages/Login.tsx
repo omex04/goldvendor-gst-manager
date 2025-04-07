@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
-import { signIn } from '@/lib/supabase';
+import { signIn } from '@/lib/localAuth'; // Import from localAuth instead
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -27,8 +27,8 @@ const Login = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: "admin@goldgst.com", // Pre-fill with default credentials
+      password: "gold123",
     },
   });
 
@@ -36,8 +36,20 @@ const Login = () => {
     // If already authenticated, redirect to dashboard
     if (isAuthenticated) {
       navigate('/dashboard');
+    } else {
+      // For dummy login, you could auto-login here
+      // handleAutoLogin();
     }
   }, [isAuthenticated, navigate]);
+  
+  // Optional: Uncomment to enable auto-login
+  // const handleAutoLogin = async () => {
+  //   const result = await signIn("admin@goldgst.com", "gold123");
+  //   if (result.success) {
+  //     await refreshUser();
+  //     navigate('/dashboard');
+  //   }
+  // };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -53,7 +65,7 @@ const Login = () => {
       toast.success('Login successful');
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.message || 'Login failed. Please check your credentials.');
+      toast.error(error.message || 'Login failed. Please use the default credentials.');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);

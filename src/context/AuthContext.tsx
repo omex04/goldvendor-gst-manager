@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
+// Import from localAuth instead of supabase
+import { getSession, getCurrentUser } from '@/lib/localAuth';
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -32,12 +33,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshUser = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.auth.getSession();
-      if (error) throw error;
+      // Get session from localStorage instead of Supabase
+      const sessionData = getSession();
       
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
+      if (sessionData) {
+        setSession(sessionData);
+        setUser(sessionData.user);
         setIsAuthenticated(true);
         
         // Handle redirects based on auth state and current path
@@ -64,32 +65,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Set up event listener for storage events to handle auth changes
   useEffect(() => {
-    // First set up the auth state listener to avoid missing auth events
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      console.log('Auth state change event:', event);
-      
-      // Only update state synchronously to avoid deadlocks
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setIsAuthenticated(!!currentSession);
-      
-      // Handle events with toast notifications outside the callback
-      if (event === 'SIGNED_IN') {
-        setTimeout(() => toast.success('Signed in successfully'), 0);
-      } else if (event === 'SIGNED_OUT') {
-        setTimeout(() => toast.info('Signed out'), 0);
-      } else if (event === 'USER_UPDATED') {
-        setTimeout(() => console.log('User updated'), 0);
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_session') {
+        refreshUser();
       }
-    });
-
-    // Then check for existing session
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // First check for existing session
     refreshUser();
     
     return () => {
-      // Make sure to unsubscribe when component unmounts
-      authListener.subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

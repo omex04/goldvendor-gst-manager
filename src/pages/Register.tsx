@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
-import { signUp } from '@/lib/supabase';
+import { signUp } from '@/lib/localAuth';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -25,7 +24,7 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { isAuthenticated, refreshUser } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,10 +37,11 @@ const Register = () => {
   });
 
   useEffect(() => {
-    // If already authenticated, redirect to dashboard
     if (isAuthenticated) {
       navigate('/dashboard');
     }
+    
+    toast.info('Registration is disabled. Please use the default login: admin@goldgst.com / gold123');
   }, [isAuthenticated, navigate]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -52,40 +52,20 @@ const Register = () => {
       const result = await signUp(
         values.email, 
         values.password, 
-        { 
-          name: values.fullName,
-          businessName: values.businessName || undefined
-        }
+        { name: values.fullName }
       );
       
-      console.log("Registration result:", result);
+      toast.error('Registration is disabled. Please use the default credentials.');
+      setApiError('Registration is disabled. Please use the default login credentials.');
       
-      if (!result.success) {
-        setApiError(result.error || 'Registration failed');
-        toast.error(result.error || 'Registration failed');
-        setIsLoading(false);
-        return;
-      }
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
       
-      toast.success('Registration successful! Logging you in...');
-      
-      // Wait a moment to ensure backend processes are complete
-      setTimeout(async () => {
-        try {
-          await refreshUser();
-          navigate('/dashboard');
-        } catch (refreshError) {
-          console.error("Error refreshing user after registration:", refreshError);
-          toast.error("Account created but couldn't log in automatically. Please try logging in.");
-          navigate('/login');
-        } finally {
-          setIsLoading(false);
-        }
-      }, 1500);
     } catch (error: any) {
       console.error('Registration error:', error);
-      setApiError(error.message || 'Registration failed. Please try again later.');
-      toast.error(error.message || 'Registration failed. Please try again later.');
+      setApiError('Registration is disabled. Please use the default login.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -97,7 +77,6 @@ const Register = () => {
       <div className="flex-grow flex items-center justify-center p-4 md:p-8">
         <Card className="w-full max-w-6xl shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-2">
-            {/* Left side - Form */}
             <div className="p-6">
               <CardHeader className="pb-4 px-0">
                 <div className="flex items-center gap-2">
@@ -225,7 +204,6 @@ const Register = () => {
               </Form>
             </div>
             
-            {/* Right side - Information */}
             <div className="bg-gradient-to-r from-gold-500 to-gold-600 p-8 flex flex-col justify-between text-black">
               <div>
                 <h2 className="text-3xl font-bold mb-4">Gold GST Manager</h2>
