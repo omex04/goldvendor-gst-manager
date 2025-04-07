@@ -39,12 +39,6 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string, userData: { name: string, businessName?: string }) => {
   try {
-    console.log("Starting registration with values:", {
-      email: email,
-      name: userData.name,
-      businessName: userData.businessName || undefined
-    });
-    
     // Create user with auth API and set user metadata
     const { data, error } = await supabase.auth.signUp({
       email,

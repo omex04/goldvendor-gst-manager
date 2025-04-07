@@ -49,12 +49,6 @@ const Register = () => {
     setApiError(null);
     
     try {
-      console.log("Starting registration with values:", {
-        email: values.email,
-        name: values.fullName,
-        businessName: values.businessName || undefined
-      });
-      
       const result = await signUp(
         values.email, 
         values.password, 
