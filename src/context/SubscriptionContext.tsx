@@ -54,16 +54,17 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       // Update subscription status based on response from edge function
       setStatus({
         isSubscribed: data.isSubscribed,
+        // Always allow invoice creation if they haven't reached the limit
         canCreateInvoice: data.isSubscribed || 
-                          (data.freeUsage && data.freeUsage.canUseFreeTier),
+                          (data.freeUsage && data.freeUsage.used < data.freeUsage.limit),
         subscription: data.subscription,
         freeUsage: data.freeUsage,
         isLoading: false,
       });
       
-      // Show warning when user is close to free limit
+      // Show warning when user is getting close to free limit
       if (!data.isSubscribed && data.freeUsage && 
-          data.freeUsage.used === 2 && data.freeUsage.limit === 3) {
+          data.freeUsage.used === data.freeUsage.limit - 1) {
         toast.warning("You have 1 free invoice remaining. Subscribe to create unlimited invoices.");
       }
     } catch (error) {

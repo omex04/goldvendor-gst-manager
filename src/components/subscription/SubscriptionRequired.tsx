@@ -31,11 +31,10 @@ const SubscriptionRequired = ({ children }: SubscriptionRequiredProps) => {
     );
   }
 
-  // Key condition: A user can create invoices if:
-  // 1. They have an active subscription, OR
-  // 2. They still have free invoices remaining (canCreateInvoice will be true for both cases)
-  if (canCreateInvoice) {
-    // User can create invoices (either free tier or subscribed)
+  // Key condition: Only show subscription required if user has used all free invoices or has an active subscription
+  // Allow creation of invoices until the free limit is reached
+  if (isSubscribed || freeUsage.used < freeUsage.limit) {
+    // User has not reached their free limit yet or is subscribed
     return <>{children}</>;
   }
 

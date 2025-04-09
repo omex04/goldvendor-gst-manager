@@ -31,7 +31,10 @@ const CreateInvoice = () => {
       
       // Show subscription prompt when user is on their last free invoice
       if (!isSubscribed && freeUsage.used === freeUsage.limit - 1) {
-        toast.success("Invoice created! This was your last free invoice. Please subscribe to create more.");
+        toast.success("Invoice created! You have used all your free invoices. Please subscribe to create more.");
+      } else if (!isSubscribed) {
+        const remainingInvoices = freeUsage.limit - freeUsage.used - 1;
+        toast.success(`Invoice created! You have ${remainingInvoices} free ${remainingInvoices === 1 ? 'invoice' : 'invoices'} remaining.`);
       } else {
         toast.success("Invoice created successfully!");
       }
