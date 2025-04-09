@@ -223,5 +223,8 @@ function AppRoutes() {
 
 // Add missing import
 import { useAuth } from './context/AuthContext';
+import { SubscriptionProvider } from './context/SubscriptionContext';
+import Pricing from './pages/Pricing';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
 
 export default App;
