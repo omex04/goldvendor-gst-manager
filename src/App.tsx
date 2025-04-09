@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -22,6 +23,7 @@ import { Toaster } from 'sonner';
 import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './components/ui/theme-provider';
 import { checkAuthConnection } from '@/lib/localAuth';
+import { useAuth } from './context/AuthContext';
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -220,11 +222,5 @@ function AppRoutes() {
     </Routes>
   );
 }
-
-// Add missing import
-import { useAuth } from './context/AuthContext';
-import { SubscriptionProvider } from './context/SubscriptionContext';
-import Pricing from './pages/Pricing';
-import SubscriptionSuccess from './pages/SubscriptionSuccess';
 
 export default App;
