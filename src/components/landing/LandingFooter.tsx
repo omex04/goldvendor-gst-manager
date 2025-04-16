@@ -28,13 +28,13 @@ const LandingFooter = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <a href="/#pricing" className="text-gray-600 dark:text-gray-300 hover:text-gold-600 dark:hover:text-gold-500">
-                  Pricing
-                </a>
+                <Link to="/features" className="text-gray-600 dark:text-gray-300 hover:text-gold-600 dark:hover:text-gold-500">
+                  Features
+                </Link>
               </li>
               <li>
-                <a href="/#features" className="text-gray-600 dark:text-gray-300 hover:text-gold-600 dark:hover:text-gold-500">
-                  Features
+                <a href="/#pricing" className="text-gray-600 dark:text-gray-300 hover:text-gold-600 dark:hover:text-gold-500">
+                  Pricing
                 </a>
               </li>
               <li>

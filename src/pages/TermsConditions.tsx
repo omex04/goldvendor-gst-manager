@@ -1,4 +1,3 @@
-
 import React from 'react';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
@@ -10,9 +9,11 @@ const TermsConditions = () => {
       
       <main className="flex-grow py-16 px-4">
         <div className="container mx-auto max-w-4xl">
-          <h1 className="text-3xl font-bold mb-8 dark:text-white">Terms and Conditions</h1>
+          <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-gold-600 to-gold-400 bg-clip-text text-transparent text-center">
+            Terms and Conditions
+          </h1>
           
-          <div className="prose dark:prose-invert max-w-none">
+          <div className="prose dark:prose-invert max-w-none bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
             <p>Last updated: {new Date().toLocaleDateString()}</p>
             
             <h2>1. Introduction</h2>

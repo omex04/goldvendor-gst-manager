@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -24,19 +23,17 @@ import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider } from './components/ui/theme-provider';
 import { checkAuthConnection } from '@/lib/localAuth';
 import { useAuth } from './context/AuthContext';
+import Features from './pages/Features';
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const queryClient = new QueryClient();
   
-  // Get the stored theme to initialize with
   const storedTheme = localStorage.getItem('vite-ui-theme') || 'light';
 
   useEffect(() => {
-    // Check connection
     const initializeLocalStorage = () => {
       try {
-        // Creating a test entry to see if localStorage is working
         localStorage.setItem('test', 'connected');
         localStorage.removeItem('test');
         return true;
@@ -46,7 +43,6 @@ function App() {
       }
     };
     
-    // Use local auth checker
     Promise.all([checkAuthConnection(), initializeLocalStorage()])
       .then(([authConnected, localStorageConnected]) => {
         setIsConnected(authConnected && localStorageConnected);
@@ -80,7 +76,6 @@ function App() {
     );
   }
 
-  // IMPORTANT: We moved Router here to wrap everything
   return (
     <Router>
       <ThemeProvider defaultTheme={storedTheme as "dark" | "light" | "system"}>
@@ -99,7 +94,6 @@ function App() {
   );
 }
 
-// Moving the routes into a separate component for clarity
 function AppRoutes() {
   const AuthRoute = ({ children }: { children: React.ReactNode }) => {
     const { isAuthenticated, isLoading } = useAuth();
@@ -131,15 +125,14 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Landing and Public Pages */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<AboutUs />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsConditions />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/features" element={<Features />} />
       
-      {/* Auth Pages */}
       <Route
         path="/login"
         element={
@@ -157,7 +150,6 @@ function AppRoutes() {
         }
       />
       
-      {/* Subscription Pages */}
       <Route
         path="/subscription/success"
         element={
@@ -167,7 +159,6 @@ function AppRoutes() {
         }
       />
       
-      {/* Protected Application Pages */}
       <Route
         path="/dashboard"
         element={
@@ -217,7 +208,6 @@ function AppRoutes() {
         }
       />
       
-      {/* Fallback Route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
