@@ -4,11 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Moon, Sun, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ui/theme-provider';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';  // Changed from useMobile to useIsMobile
 
 const LandingHeader = () => {
   const { setTheme, theme } = useTheme();
-  const { isMobile } = useMobile();
+  const isMobile = useIsMobile();  // Changed from { isMobile } to just isMobile
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   
@@ -146,3 +146,4 @@ const LandingHeader = () => {
 };
 
 export default LandingHeader;
+
