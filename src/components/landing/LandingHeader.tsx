@@ -1,127 +1,144 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, Moon, Sun, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Home, Menu, X, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/components/ui/theme-provider';
+import { useMobile } from '@/hooks/use-mobile';
 
 const LandingHeader = () => {
+  const { setTheme, theme } = useTheme();
+  const { isMobile } = useMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-
+  const navigate = useNavigate();
+  
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-sm border-b border-border dark:bg-gray-900/80 dark:border-gray-800">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 text-xl font-semibold">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center">
+          <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-md bg-gold-500 flex items-center justify-center">
               <Home className="w-5 h-5 text-black" />
             </div>
-            <span className="text-foreground dark:text-white">Gold GST</span>
+            <span className="text-xl font-semibold text-gray-900 dark:text-white hidden sm:inline-block">Gold GST</span>
           </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
-              Home
-            </Link>
-            <a href="/#pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
-              Pricing
-            </a>
-            <Link to="/about" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
-              About
-            </Link>
-            <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-foreground dark:text-gray-300 dark:hover:text-white">
-              Contact
-            </Link>
+        </div>
+        
+        {!isMobile ? (
+          <nav className="hidden md:flex items-center space-x-1">
+            <Link to="/features" className="px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-gold-600 dark:text-gray-200 dark:hover:text-gold-400">Features</Link>
+            <Link to="/invoice-templates" className="px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-gold-600 dark:text-gray-200 dark:hover:text-gold-400">Templates</Link>
+            <Link to="/pricing" className="px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-gold-600 dark:text-gray-200 dark:hover:text-gold-400">Pricing</Link>
+            <Link to="/about" className="px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-gold-600 dark:text-gray-200 dark:hover:text-gold-400">About</Link>
+            <Link to="/contact" className="px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-gold-600 dark:text-gray-200 dark:hover:text-gold-400">Contact</Link>
           </nav>
-
-          {/* Actions */}
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
+        ) : null}
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="mr-2 text-gray-700 dark:text-gray-200"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+          
+          {!isMobile ? (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                asChild
+                className="dark:bg-gray-800 dark:text-white dark:border-gray-700 dark:hover:bg-gray-700"
+              >
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button 
+                size="sm"
+                asChild
+                className="bg-gold-500 hover:bg-gold-600 text-black"
+              >
+                <Link to="/register">Register</Link>
+              </Button>
+            </>
+          ) : (
+            <Button 
+              variant="ghost" 
               size="icon"
-              onClick={toggleTheme}
-              className="hidden md:flex"
+              onClick={toggleMenu}
+              className="text-gray-700 dark:text-gray-200"
             >
-              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <div className="hidden md:flex items-center space-x-2">
-              <Button asChild variant="outline" className="dark:border-gray-700 dark:text-gray-300">
-                <Link to="/login">Log in</Link>
-              </Button>
-              <Button asChild className="bg-gold-500 hover:bg-gold-600 text-black dark:bg-gold-600 dark:hover:bg-gold-700">
-                <Link to="/register">Sign up</Link>
-              </Button>
-            </div>
-
-            {/* Mobile Menu Toggle */}
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* Mobile Navigation */}
-      {isMenuOpen && (
-        <div className="md:hidden absolute w-full bg-background dark:bg-gray-900 border-b border-border dark:border-gray-800 p-4 shadow-lg">
-          <nav className="flex flex-col space-y-4">
+      
+      {/* Mobile menu */}
+      {isMenuOpen && isMobile && (
+        <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-2 pt-2 pb-3 space-y-1">
             <Link 
-              to="/" 
-              className="text-sm font-medium text-foreground hover:text-foreground/80 dark:text-gray-300"
-              onClick={() => setIsMenuOpen(false)}
+              to="/features"
+              onClick={() => setIsMenuOpen(false)} 
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
-              Home
+              Features
             </Link>
-            <a 
-              href="/#pricing" 
-              className="text-sm font-medium text-foreground hover:text-foreground/80 dark:text-gray-300"
-              onClick={() => setIsMenuOpen(false)}
+            <Link 
+              to="/invoice-templates"
+              onClick={() => setIsMenuOpen(false)} 
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              Templates
+            </Link>
+            <Link 
+              to="/pricing"
+              onClick={() => setIsMenuOpen(false)} 
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               Pricing
-            </a>
+            </Link>
             <Link 
-              to="/about" 
-              className="text-sm font-medium text-foreground hover:text-foreground/80 dark:text-gray-300"
-              onClick={() => setIsMenuOpen(false)}
+              to="/about"
+              onClick={() => setIsMenuOpen(false)} 
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               About
             </Link>
             <Link 
-              to="/contact" 
-              className="text-sm font-medium text-foreground hover:text-foreground/80 dark:text-gray-300"
-              onClick={() => setIsMenuOpen(false)}
+              to="/contact"
+              onClick={() => setIsMenuOpen(false)} 
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               Contact
             </Link>
-            <div className="flex items-center space-x-2 pt-2">
-              <Button asChild variant="outline" className="flex-1 dark:border-gray-700 dark:text-gray-300">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>Log in</Link>
-              </Button>
-              <Button asChild className="flex-1 bg-gold-500 hover:bg-gold-600 text-black dark:bg-gold-600 dark:hover:bg-gold-700">
-                <Link to="/register" onClick={() => setIsMenuOpen(false)}>Sign up</Link>
-              </Button>
+            <div className="pt-4 pb-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center px-3">
+                <Link 
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}  
+                  className="w-full block px-3 py-2 rounded-md text-center text-base font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 mb-2"
+                >
+                  Login
+                </Link>
+              </div>
+              <div className="flex items-center px-3">
+                <Link 
+                  to="/register"
+                  onClick={() => setIsMenuOpen(false)}  
+                  className="w-full block px-3 py-2 rounded-md text-center text-base font-medium bg-gold-500 hover:bg-gold-600 text-black"
+                >
+                  Register
+                </Link>
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="flex items-center justify-center w-full"
-            >
-              {theme === 'dark' ? <Sun className="h-5 w-5 mr-2" /> : <Moon className="h-5 w-5 mr-2" />}
-              {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-            </Button>
-          </nav>
+          </div>
         </div>
       )}
     </header>

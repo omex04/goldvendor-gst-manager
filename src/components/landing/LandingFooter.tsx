@@ -33,6 +33,11 @@ const LandingFooter = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/invoice-templates" className="text-gray-600 dark:text-gray-300 hover:text-gold-600 dark:hover:text-gold-500">
+                  Invoice Templates
+                </Link>
+              </li>
+              <li>
                 <a href="/#pricing" className="text-gray-600 dark:text-gray-300 hover:text-gold-600 dark:hover:text-gold-500">
                   Pricing
                 </a>
